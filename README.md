@@ -104,7 +104,7 @@ More: [Privacy in NeverQuestAlone](PRIVACY.md).
 | `/bones hi` | Says hi (the first time, it finishes setup) |
 | `/bones settings` | Opens Settings |
 | `/bones qol` | Opens Quality of Life in Settings |
-| `/bones reading off` | Stops the app reading your screen: messages wait for a reload (see [No screen reading](HOW-IT-WORKS.md#no-screen-reading)). `/bones reading on` turns it back on |
+| `/bones reading off` | Stops the app reading your screen: messages wait for a reload (see [No screen reading](HOW-IT-WORKS.md#no-screen-reading)). `/bones reading on` turns it back on, unless it’s off on the app’s Your data page |
 | `/bones paste` | Opens Copy and Paste again, when you play without the app |
 | `/bones diag` | Shows diagnostics for a bug report |
 | `/bones help` | Shows the main commands. `/bones help all` shows every one |

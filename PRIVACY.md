@@ -36,7 +36,7 @@ NeverQuestAlone runs on your computer and talks to the AI company you choose. Th
 
 **Uninstalling** removes all of it, your saved keys too. If you choose, it also removes the addon from WoW, with its folders and the chat history it keeps there. To remove a key without uninstalling, click Delete key on the app’s Your AI page. On Windows, removing the app in Settings > Apps removes the addon and its chat history in WoW too.
 
-**On your screen,** the app reads only the top of WoW’s window, where the addon draws, so your messages go at once. It doesn’t look at the rest of your screen. Turn off **Screen Reading** in the addon’s Settings (under What Bones Knows) and nothing is drawn: your messages wait for a reload, and replies still come in. [How it works](HOW-IT-WORKS.md#no-screen-reading) has the details.
+**On your screen,** the app reads only the top of WoW’s window, where the addon draws, so your messages go at once. It doesn’t look at the rest of your screen. Turn off **Screen reading** on the app’s Your data page, or **Screen Reading** in the addon’s Settings (under What Bones Knows), and it reads nothing; off in either place wins. Your messages then wait for a reload, and replies still come in. [How it works](HOW-IT-WORKS.md#no-screen-reading) has the details.
 
 ## Why these defaults
 

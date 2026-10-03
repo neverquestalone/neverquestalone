@@ -56,7 +56,7 @@ It never reads other players’ chat, your guild roster or your friends list.
 
 ## No screen reading
 
-Turn off **Screen Reading** in the addon’s Settings (under What Bones Knows), or type `/bones reading off`. With Screen Reading off, the addon draws no strip. Your messages wait in the addon’s saved data and go when you reload the game’s interface (click Reload above the chat window; a short loading screen, never in combat). Replies still come in on their own. For now the app still watches the top of the game window while Screen Reading is off, though nothing is drawn there; an update will stop that too. `/bones reading on` switches back.
+Turn off **Screen reading** on the app’s Your data page, or **Screen Reading** in the addon’s Settings (under What Bones Knows), or type `/bones reading off`; off in either place wins. With screen reading off, the addon draws no strip and the app stops its capture helper, so nothing on your screen is read (on a Mac, the Screen Recording indicator goes off). Your messages wait in the addon’s saved data and go when you reload the game’s interface (click Reload above the chat window; a short loading screen, never in combat). Replies still come in on their own. To switch back, turn it on where you turned it off (`/bones reading on` for the addon’s); the addon’s switch takes effect at your next reload.
 
 `/bones mode reload` is stricter still: replies also wait for a reload. `/bones mode pixel` switches back.
 

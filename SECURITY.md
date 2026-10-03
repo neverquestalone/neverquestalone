@@ -1,5 +1,7 @@
 # Security
 
-Found a security problem in NeverQuestAlone? Report it privately, never in a public issue: on the releases repository’s Security tab, click Report a vulnerability.
+Found a security problem in NeverQuestAlone? Don’t post it in a public issue. Report it privately instead: open this repository’s [Security tab](https://github.com/neverquestalone/neverquestalone/security) and click Report a vulnerability. Only the people who make NeverQuestAlone can see it.
 
-Don’t include your API key, the code that links the addon to the app, or anything from Last request you’d rather keep private. If you pasted a key anywhere public, revoke it on your AI company’s site first.
+Leave out your API key, the code that links the addon to the app, and anything from Last request you’d rather keep private.
+
+**Pasted a key somewhere public by mistake?** Delete it on your AI company’s site first, then make a new one and put it in the app: Your AI > Replace key.

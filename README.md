@@ -1,113 +1,170 @@
 # NeverQuestAlone
 
-**An AI companion for World of Warcraft®: Forever.** Ask Bones in a chat window inside the game (“where do I turn this in?”, “is this ring better than mine?”, “what should I do next?”), and the reply shows up right there, with a route on your map when it helps. Bones knows your character, your quests and your gear, and thinks with an AI you choose: Claude, ChatGPT or Grok with your own API key, or a model on your own computer.
+<img src="images/icon.png" alt="" width="96" align="right">
 
-- **Your key, your account.** You pay your AI company directly, as you go. There’s no NeverQuestAlone account, server or subscription.
-- **You see what you spend.** NeverQuestAlone sets no limits of its own. What you spend shows in the chat window, you can set a daily spend limit if you want one, and when something needs you, you get one plain line in game.
-- **It never plays for you.** No key presses or mouse clicks, no memory reading, nothing posted to chat. The AI can only write text into Bones’s window.
+**Always know where to go next.** NeverQuestAlone is a free quest companion for World of Warcraft®: Forever. Bones, the skull by your quest tracker, plans your quests and redraws your route on the map as you play. Bones runs on the AI you pick: Claude, ChatGPT, Grok or Gemini with your own API key, another OpenAI-compatible service, or a model on your own computer.
 
-> **Unofficial.** NeverQuestAlone is not made, reviewed or endorsed by Blizzard. It reads a small area of your screen that its addon draws, and writes addon files. It never controls your character. Use it at your own risk. [How it works](HOW-IT-WORKS.md) explains exactly what it does.
+**[Download for Mac](https://github.com/neverquestalone/neverquestalone/releases/latest/download/NeverQuestAlone-mac.dmg)** · **[Download for Windows](https://github.com/neverquestalone/neverquestalone/releases/latest/download/NeverQuestAlone-Setup.exe)** · [All downloads](https://github.com/neverquestalone/neverquestalone/releases/latest)
 
+<img src="images/route.jpg" alt="The Barrens on the world map: Bones’s route joins your quest pins with colored lines, from the next stop beside your arrow at the Wailing Caverns." width="100%">
 
-## What you need
+## What it does
 
-- **World of Warcraft: Forever**, in Windowed or Windowed (Fullscreen) mode.
-- **macOS 14 or later, or Windows 10 or 11.**
-- **An AI:** an API key from Anthropic (Claude), OpenAI (ChatGPT), xAI (Grok) or Google (Gemini); or any OpenAI-compatible service, such as OpenRouter, Groq or Together with its own key, or Ollama or LM Studio on your computer with a model already downloaded (best with 16 GB or more of graphics memory, since the model shares your graphics card with the game).
+- **Your next stop is always on screen.** How far it is, and what to do when you get there.
+- **Your map always shows the best route.** Every stop in your quest log, in the best order, on the map and minimap.
+- **Ask when you’re stuck.** Type a question in game and get a waypoint or clear directions.
+- **Less clicking, if you want it.** Quality-of-life options like Auto Accept Quests and Auto Sell Junk finish what you start: talk to a quest giver and the quest is accepted; open a vendor and your gray items are sold. They’re off until you turn them on.
+
+<p>
+  <img src="images/next-stop.webp" alt="Bones’s HUD in game: the next quest, an arrow and 194 yards to it, with where to look." width="49%" align="top">
+  <img src="images/ask.webp" alt="An answer in the HUD: the oozes are in the Wailing Caverns oasis pools, pinned on your map, with a Follow Pin button." width="49%" align="top">
+</p>
+
+**It never plays for you.** No key presses or mouse clicks, no memory reading, nothing posted to chat. The AI can only write text into Bones’s window.
+
+**Free, no account, no tracking.** You pay your AI company only for what you use.
+
+> **Unofficial.** NeverQuestAlone isn’t made, reviewed or endorsed by Blizzard. [How it works](HOW-IT-WORKS.md) explains exactly what it does.
 
 ## Set up in three steps
 
-Setup takes about 5 minutes with an API key in hand, or about 10 if you make one.
+It takes 2–3 minutes once you have an API key. You need:
+
+- **World of Warcraft: Forever**, in Windowed or Windowed (Fullscreen) mode, with Enable Sound on in its sound settings.
+- **macOS 14 or later, or Windows 10 or 11.**
+- **An API key** for the AI you want, with a few dollars of credit. [What’s an API key?](#whats-an-api-key)
 
 ### 1 Download
 
-Download NeverQuestAlone from https://github.com/neverquestalone/neverquestalone/releases. On a Mac, open the `.dmg`, drag NeverQuestAlone to Applications, then open it from Applications; macOS asks whether you’re sure, so click **Open**. It’s signed and notarized by Apple. On Windows, open `NeverQuestAlone-Setup-<version>.exe`: it installs and opens by itself. To check a download first, its SHA-256 (`shasum -a 256` on a Mac, `certutil -hashfile <file> SHA256` on Windows) should match SHA256SUMS.txt on the release page.
+Download NeverQuestAlone for [Mac](https://github.com/neverquestalone/neverquestalone/releases/latest/download/NeverQuestAlone-mac.dmg) or [Windows](https://github.com/neverquestalone/neverquestalone/releases/latest/download/NeverQuestAlone-Setup.exe).
+
+- **Mac:** open the `.dmg`, drag NeverQuestAlone to Applications and open it from there. If macOS asks whether you’re sure, click **Open**.
+- **Windows:** open `NeverQuestAlone-Setup.exe`. It installs and opens by itself. If Windows says “Windows protected your PC”, click **More info**, then **Run anyway**.
 
 ### 2 Connect your AI
 
-NeverQuestAlone asks which AI Bones should use.
+<img src="images/connect-your-ai.webp" alt="The NeverQuestAlone app at Connect your AI: Claude, ChatGPT, Grok, Gemini and Other, each with what a day of play costs." width="560">
 
-- **Claude, ChatGPT, Grok or Gemini:** pick one, and the app shows you how to get an API key from its AI company. Copy the key, then click **Paste key**. The app tests the key with one tiny request and saves it in your macOS Keychain (Windows Credential Manager on Windows).
-- **Other:** any service that speaks the OpenAI chat format. Paste its base URL (for example `https://openrouter.ai/api/v1`, or `http://localhost:11434/v1` for Ollama on this Mac), your key (leave it empty for a server on this Mac) and the model’s name, then click **Connect**. The app tests it with one tiny request and saves it.
+1. Pick an AI, like Claude.
+2. Click **Open Anthropic’s key page**, make a key and copy it. Add a few dollars of credit there too.
+3. Click **Paste Anthropic key**, then **Agree and connect**. The app tests the key and saves it in your macOS Keychain or Windows Credential Manager.
+4. Click **Continue**.
 
-Then check your defaults: the model (with what a typical day costs on it), what Bones sends with your messages, and whether the app starts when you sign in to your Mac. The defaults send the least that works: your character’s name, realm and guild stay out, other players’ names from the game are replaced with stand-ins, and check-ins are off. [Details](PRIVACY.md). There’s no spend limit unless you set one later, on the app’s Usage page.
+The buttons name the company behind the AI you picked: Anthropic for Claude, OpenAI for ChatGPT, xAI for Grok and Google for Gemini.
+
+Using another service, or a model on your own computer? Pick **Other**, click **Connect another AI**, fill in its address (Base URL), key and model, and click **Connect**.
+
+The defaults send the least that works: your character’s name, realm and guild stay out, and other players’ names are swapped for stand-ins. Change them later on the app’s Your data and Settings pages.
 
 ### 3 Say hi in game
 
-1. **The app installs its addon in WoW.** If WoW is open, click **Install when WoW closes**, and it installs the moment you quit. New addon files load only when the game starts, not on a `/reload`.
-2. **On a Mac, allow Screen Recording** when the app asks. It reads only the small corner its addon draws in the game window. About once a month macOS may ask again; that’s macOS, not a problem with the app. If you’d rather allow no screen reading at all, see [No screen reading](#no-screen-reading).
-3. **Start WoW and log in.** Bones meets you by your quest tracker.
-4. **Say hi.** Click **Say Hi** in Bones’s welcome, or type `/bones hi`. Bones answers in game, and setup is done.
+1. **Install the addon.** Click **Install**. If WoW is open, click **Install when WoW closes** instead: new addons only load when the game starts.
+2. **Allow Screen Recording** (Mac only). Click **Allow**, then **Open System Settings** in the macOS box, and turn on NeverQuestAlone. The app only reads the top of the game window, where the addon draws.
+3. **Start WoW** and log in. Bones meets you by your quest tracker.
+4. **Say hi.** Click **Say Hi**, or type `/bones hi` in chat. When Bones answers, you’re set.
 
-NeverQuestAlone lives in your menu bar (on Windows, the system tray by the clock). Open it for your AI and keys, what you spend, Connections (every host it talks to) and Last request (exactly what was sent).
+NeverQuestAlone lives in your menu bar (on Windows, the system tray by the clock).
 
-## Your AI
-
-| | What you need | Cost | Privacy |
-|---|---|---|---|
-| **Claude, ChatGPT, Grok or Gemini** | An API key from Anthropic, OpenAI, xAI or Google, with a few dollars of credit | The AI company’s prices. For example, Claude Haiku 4.5 is about 0.4–0.9¢ a reply, about $0.17–0.37 a day at 40 replies, so $5 of credit lasts about 2–4 weeks (estimates; the app shows real figures) | Each AI company’s card in [PRIVACY.md](PRIVACY.md). Google’s terms for Gemini say you must be 18 or older |
-| **Other: an OpenAI-compatible service** | Its base URL, a key if it takes one, and a model’s name: OpenRouter, Groq, Together and others | The service’s prices, paid to it directly; the app shows the exact cost only when the service reports it | The service’s own rules |
-| **Other: a model on your computer** | Ollama (`http://localhost:11434/v1`) or LM Studio (`http://localhost:1234/v1`) with a model downloaded | $0 | What you ask stays on your computer. The model shares your graphics card with the game and can lower your frame rate |
-
-**A Claude Pro or Max subscription isn’t an API key** and doesn’t include API credit; the same goes for ChatGPT, Gemini and Grok subscriptions. Only API keys work: that’s the only way these AI companies let apps like this one connect.
-
-**Your key goes in the app, never the game.** It’s saved in your macOS Keychain (Windows Credential Manager on Windows) and sent only to its own AI company. If you paste something that looks like a key into the game by mistake, it isn’t sent or saved.
-
-**Set a spend limit at your AI company.** The app links to the right page. NeverQuestAlone has no spend limit of its own, so the one at your AI company is what stops a runaway bill or a leaked key.
+**No app?** The addon also works on its own with Copy and Paste: you copy each message into any AI chat and paste the reply back. Download `NeverQuestAlone-addon.zip` from the [releases page](https://github.com/neverquestalone/neverquestalone/releases/latest) and unzip it into the `Interface/AddOns` folder inside your World of Warcraft `_forever_` folder.
 
 ## What it costs
 
-NeverQuestAlone sets no limits: not on what you spend, not on the messages you type, not on check-ins (what Bones says on its own after a level-up, a new zone or a finished route; they’re off until you turn them on). The one exception is a safety catch that normal play never reaches: if something goes wrong and more than 10 check-ins come in a minute, Bones pauses check-ins until you send a message ([details](HOW-IT-WORKS.md#what-it-costs)). What you spend is up to you and your AI company:
+The app is free, and NeverQuestAlone sets no limits of its own. You pay your AI company for what you use.
 
-| | |
-|---|---|
-| **Your AI company’s limits** | The spend limit you set there, and its rate limits. When one is reached, you get one line in game, for example “You’ve reached the spend limit you set at Anthropic.” |
-| **Your own daily spend limit, if you want one** | None unless you set it, on the app’s Usage page. With a $5.00 limit, for example, you’d see: “You’ve reached your daily spend limit ($5.00). Raise it in the NeverQuestAlone app, or it resets at midnight.” |
-| **A model on your computer** | $0 |
+| AI | What you need | Cost |
+|---|---|---|
+| **Claude, ChatGPT, Grok or Gemini** | An API key from Anthropic, OpenAI, xAI or Google, with a few dollars of credit | Pay as you go (example below) |
+| **Other: an OpenAI-compatible service** | Its address, a key if it takes one, and a model’s name (OpenRouter, Groq, Together and others) | That service’s prices |
+| **Other: a model on your computer** | Ollama (`http://localhost:11434/v1`) or LM Studio (`http://localhost:1234/v1`) with a model downloaded | Free. What you ask stays on your computer. The model shares your graphics card with the game |
 
-The app never switches to another AI on its own. When something goes wrong, you get one line in game (for example “Your Anthropic account is out of credit.”), and the fix is one click away in the app.
+On Claude Sonnet 5.5, Claude’s default, 40 replies a day cost about $0.76–1.22, so $5 of credit lasts 4 to 7 days. That’s about 1.9–3.0¢ a reply. The app shows your real figures.
+
+**A Claude, ChatGPT, Gemini or Grok subscription isn’t an API key.** Only API keys work.
+
+**Set a spend limit at your AI company.** It’s what stops a runaway bill or a leaked key, and the app links to the right page. When you reach it, you get one line in game, like “You’ve reached the spend limit you set at Anthropic.”
+
+**Want a daily spend limit too?** Set one on the app’s Your AI page (Daily limit). There’s none unless you set it, and it resets at midnight.
+
+## Your privacy, in short
+
+- **Nothing goes to us.** There’s no NeverQuestAlone account, server, analytics or tracking.
+- **Your messages and game data go only to the AI you pick.** Your character’s name, realm and guild stay out unless you turn them on.
+- **Your key stays on your computer**, in your macOS Keychain or Windows Credential Manager, and goes only to its own AI company.
+- **Your chat history stays on your computer** and is deleted after 30 days. You can change that in the app.
+- **You can see everything.** On the app’s Your data page, Last request shows exactly what was sent, and Connections lists every address the app talked to.
+
+More: [Privacy in NeverQuestAlone](PRIVACY.md).
 
 ## In game
 
 | Command | What it does |
 |---|---|
-| `/bones` | Opens or closes the window |
-| `/bones <question>` | Asks in the open chat |
+| `/bones` | Opens or closes the window (`/nqa` does the same) |
+| `/bones <question>` | Asks Bones a question |
 | `/bones hi` | Says hi (the first time, it finishes setup) |
-| `/bones stream on` | No screen reading, as the Screen Reading switch in Settings: see below. `/bones stream off` goes back |
-| `/bones mode reload` | Stricter: replies wait for a reload too. `/bones mode pixel` goes back |
-| `/bones diag` | Diagnostics for a bug report |
-| `/bones help` | The main commands; `/bones help all` lists every one |
+| `/bones settings` | Opens Settings |
+| `/bones qol` | Opens Quality of Life in Settings |
+| `/bones reading off` | Stops the app reading your screen: messages wait for a reload (see [No screen reading](HOW-IT-WORKS.md#no-screen-reading)). `/bones reading on` turns it back on |
+| `/bones paste` | Opens Copy and Paste again, when you play without the app |
+| `/bones diag` | Shows diagnostics for a bug report |
+| `/bones help` | Shows the main commands. `/bones help all` shows every one |
 
-**Keep the game’s sound on.** Replies arrive a few seconds after the AI finishes, and the addon hears about them through a sound file. The volume can be 0, but with Enable Sound off the addon checks on a timer instead, and replies can take up to a minute. The app tells you when this happens.
-### No screen reading
+## Questions
 
-Turn off **Screen Reading** in the addon’s Settings (under What Bones Knows). Nothing is drawn: your messages wait for a reload (click Reload above the chat window; a short loading screen, never in combat), and replies still come in. `/bones stream on` does the same; turning Screen Reading back on, or `/bones stream off`, switches back. `/bones mode reload` is stricter still: replies also wait for a reload.
+### Is it allowed? Will I get banned?
+
+It works like the addons players have used for years: it runs on the game’s own addon tools and never moves, targets, fights or posts to chat for you. Its quality-of-life options, like Auto Accept Quests and Auto Sell Junk, only finish what your own click opened. Blizzard has the final say.
+
+### What’s an API key?
+
+It lets the app use an AI company’s service, billed as you go. Make one on Anthropic’s, OpenAI’s, xAI’s or Google’s site and add a few dollars of credit. The app shows you where.
+
+### Why do I need the app?
+
+Addons can’t reach the internet, so the app asks your AI and brings the reply back to the game. Without it, use Copy and Paste.
+
+### The addon isn’t in the game
+
+Quit WoW completely and start it again: new addons don’t load on `/reload`. Then, at character select, click **AddOns** and check NeverQuestAlone.
+
+### Nothing happens when I send a message
+
+Open the app: it shows what needs fixing. On a Mac, also check System Settings > Privacy & Security > Screen & System Audio Recording (Screen Recording on macOS 14).
+
+### Replies are slow
+
+Turn on Enable Sound in the game’s sound settings. That’s how the addon hears a reply is ready; with it off, replies can take up to a minute.
+
+### I see an error line in game
+
+It names the fix, usually in the app: a new key, more credit, a higher spend limit at your AI company, or starting the model on your computer.
+
+### An update broke something
+
+Download the version before it from the [releases page](https://github.com/neverquestalone/neverquestalone/releases) and install it over this one.
+
+### How do I uninstall?
+
+In the app, open Settings > Show more > Uninstall. It removes your keys, chat history and settings, and the addon if you choose. Then delete the app: on a Mac, drag it from Applications to the Trash; on Windows, remove it in Settings > Apps.
 
 ## Check it yourself
 
-- **Connections** in the app lists every host it contacted. Compare it with [LuLu](https://objective-see.org/products/lulu.html) or Little Snitch on macOS, [TCPView](https://learn.microsoft.com/en-us/sysinternals/downloads/tcpview) on Windows. You should see only your AI company and GitHub.
-- **Last request** shows exactly what went to your AI company.
-- **Your key** is in Keychain Access under NeverQuestAlone, with your AI company as the account.
-- **Every release** lists SHA-256 checksums.
-
-More in [How it works](HOW-IT-WORKS.md#check-it-yourself).
-
-## Troubleshooting
-
-- **The addon isn’t in the game.** Quit the game completely and start it again: new addon files don’t load on `/reload`.
-- **Replies are slow.** Check that Enable Sound is on in the game’s sound settings (the volume can be 0).- **Nothing happens when you send.** Open the app: its setup screen shows which step stopped. On macOS, check System Settings > Privacy & Security > Screen & System Audio Recording (Screen Recording on macOS 14). macOS full screen (the green button, which moves the game to its own Space) is untested; use the game’s own display modes.
-- **An error line in game.** It names the fix, usually in the app: a new key, credit or a higher spend limit at your AI company, or starting the model server on your computer.
+Watch the network with [LuLu](https://objective-see.org/products/lulu.html) or Little Snitch on a Mac, or [TCPView](https://learn.microsoft.com/en-us/sysinternals/downloads/tcpview) on Windows: you should only see your AI company and GitHub. Every release lists SHA-256 checksums. [More ways to check](HOW-IT-WORKS.md#check-it-yourself).
 
 ## Report a bug
 
-Open an issue and attach the diagnostics from the app (Diagnostics > Copy diagnostics). They hold the app and addon versions, your system, whether screen reading works, how many replies fit before your next reload, the kinds of errors, and the last 200 log lines. Keys, your install token (the code that links the addon to the app) and your home folder’s paths are taken out, and there are no messages, replies or error text from your AI company. **Never paste an API key**, and don’t paste `/bones diag full` output, which shows your install token.
+[Open an issue](https://github.com/neverquestalone/neverquestalone/issues) and attach the diagnostics from the app (Settings > Show more > Diagnostics > Copy diagnostics).
+
+- They hold the app and addon versions, your system, whether screen reading works, how many replies fit before your next reload, the kinds of errors, and the last 200 log lines.
+- Keys, the code that links the addon to the app, and your home folder’s paths are taken out, and there are no messages, replies or error text from your AI company.
+
+**Never paste an API key**, and don’t paste `/bones diag full` output, which shows the code that links the addon to the app.
 
 A security problem? Report it privately on the Security tab (Report a vulnerability), never in a public issue.
 
 ## Credits and license
 
-NeverQuestAlone is built on [chelinho139/wow-ai](https://github.com/chelinho139/wow-ai) and credits [0xInuarashi’s wow-forever-codex](https://github.com/0xinuarashi/wow-forever-codex) as wow-ai does. Full credits and third-party notices: [CREDITS.md](CREDITS.md). Licensed under the [MIT license](LICENSE).
+NeverQuestAlone is built on [wow-ai](https://github.com/chelinho139/wow-ai) by chelinho139, with thanks to [0xInuarashi’s wow-forever-codex](https://github.com/0xinuarashi/wow-forever-codex). [Credits](CREDITS.md) · [MIT license](LICENSE)
 
 ---
 

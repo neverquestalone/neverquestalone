@@ -4,7 +4,7 @@ NeverQuestAlone is a quest companion for World of Warcraft®: Forever. Bones, th
 
 This page explains exactly what it does, what leaves your computer, and how to check all of it yourself.
 
-> **Unofficial.** NeverQuestAlone is not made, reviewed or endorsed by Blizzard Entertainment, and it isn’t affiliated with Anthropic, OpenAI, Google, xAI or OpenRouter. It reads the top of the game window, where its addon draws, and writes addon files. It never controls your character.
+> **Unofficial.** NeverQuestAlone is not made, reviewed or endorsed by Blizzard Entertainment, and it isn’t affiliated with Anthropic, OpenAI, Google, xAI or OpenRouter. It reads the top of the game window, where its addon draws, and the addon’s own saved file, and writes addon files. It never controls your character.
 
 ## The short version
 
@@ -12,7 +12,7 @@ This page explains exactly what it does, what leaves your computer, and how to c
 - **It never touches the game itself.** No key presses, no clicks, no memory reading, nothing posted to chat.
 - **There’s no NeverQuestAlone server.** The app talks straight to the AI company you picked. Nothing goes to us.
 - **Your key never enters the game.** It stays in your macOS Keychain or Windows Credential Manager.
-- **You can check every claim on this page.** See [Check it yourself](#check-it-yourself).
+- **You can check what matters yourself:** what the app connects to, what it sends and where your key is kept. See [Check it yourself](#check-it-yourself).
 
 ## What it’s made of
 
@@ -27,7 +27,7 @@ flowchart LR
 - **The addon** runs inside the game. It draws the chat window, the HUD beside your quest tracker, and map pins. Like every addon, it can’t reach the network or read other files while the game runs. Its folder is `NeverQuestAlone`.
 - **The parts** are 200 small addons, NeverQuestAlone Part 001 to Part 200 (folders `NQA_S001` to `NQA_S200`). Each one holds one reply at a time. The AddOns list folds them under NeverQuestAlone Parts: leave them checked.
 - **The app** sits in your menu bar or system tray. It holds your settings and your key, talks to your AI company, and keeps your chat history on your computer.
-- **The capture helper** is a small program the app starts only while the game runs. It reads the top of the game window, where the addon draws, nothing else, and it has no network code.
+- **The capture helper** is a small program the app runs while Screen reading is on. It reads only while WoW is open, only the top of the game window, where the addon draws, and it has no network code.
 - **Your AI:** Claude, ChatGPT, Grok or Gemini with your own key from Anthropic, OpenAI, xAI or Google; or Other: any OpenAI-compatible service at its own address (OpenRouter, Groq, Together, or Ollama or LM Studio on your own computer), with its key if it takes one.
 
 ## One message, start to finish
@@ -46,13 +46,13 @@ The strip only shows while a message is waiting. Replies usually arrive a few se
 These are fixed rules. Tests run on every build to check the addon’s side, for example that it never calls the game’s movement, casting, macro or chat functions.
 
 1. **No input to the game.** No key presses, mouse or controller events, ever.
-2. **No memory reads or writes, no injection.** Nothing hooks into the game or changes the game’s own files. The app only reads the top of the game window (or, with no screen reading, the addon’s saved data) and writes its own addon files.
-3. **Nothing happens without you.** Every message starts with your click or key press. Nothing is posted to chat, mail or other players. The addon calls no protected functions, so it can’t move, cast, target or trade.
+2. **No memory reads or writes, no injection.** Nothing hooks into the game or changes the game’s own files. The app only reads the top of the game window and the addon’s own saved file, and writes its own addon files.
+3. **Nothing happens without you.** Every message starts with your click or key press, except check-ins, which are off until you turn them on. Nothing is posted to chat, mail or other players. The addon calls no protected functions, so it can’t move, cast, target or trade.
 4. **No combat data.** The strip carries only what you typed and your own character’s state. Bones never checks in during combat.
 
 It never reads other players’ chat, your guild roster or your friends list.
 
-**The AI can’t act either.** It has no tools: it can’t run commands, read or write files, browse the web, send messages or spend money. It can only write text into Bones’s window. Web addresses in a reply show as plain text you can’t click, and item and quest links are rebuilt by the addon from numbers only.
+**The AI can’t act either.** It has no tools: it can’t run commands, read or write files, browse the web, send messages or spend money. It can only write text: replies in Bones’s window, and routes and pins on your map, which the app checks first. Web addresses in a reply show as plain text you can’t click, and item and quest links are rebuilt by the addon from numbers only.
 
 ## No screen reading
 
@@ -65,7 +65,7 @@ Turn off **Screen reading** on the app’s Your data page, or **Screen Reading**
 Your messages, and if you choose, your own character’s game data, go to the AI company you picked. Nothing goes to us. [Privacy in NeverQuestAlone](PRIVACY.md) has the full list, every setting, and each AI company’s rules.
 
 - **By default,** your character’s name, realm and guild stay out (the AI sees “your character”). Other players’ names from the game (your target, players you shift-click, “Made by” lines) are swapped for stand-ins like “Player A” before anything is sent, and swapped back in the reply on your computer. Names you type yourself are sent as you typed them.
-- **Your chat history** stays on your computer, in a folder only your user account can read, and is deleted after 30 days. You can change that, or delete it all.
+- **Your chat history** stays on your computer. The app keeps its copy in a folder only your user account can read and deletes it after 30 days; you can change that, or delete it all. The addon keeps a copy of each chat, up to its last 200 lines, in WoW’s saved files until you delete the chat in game or uninstall with the addon.
 - **Nothing is sent to us.** No telemetry, analytics or crash reports. The only other traffic is the update check to GitHub, which you can turn off.
 
 ## Your key
@@ -143,7 +143,7 @@ You don’t have to take any of this on trust.
 
 **Watch the network** while you play and send a few messages:
 
-- **Windows:** [TCPView](https://learn.microsoft.com/en-us/sysinternals/downloads/tcpview), free from Microsoft. Filter by NeverQuestAlone. You should only see your AI company (for example `api.anthropic.com`) and, at startup, GitHub. Apart from an update installing on macOS, you should see no listening ports.
+- **Windows:** [TCPView](https://learn.microsoft.com/en-us/sysinternals/downloads/tcpview), free from Microsoft. Filter by NeverQuestAlone. You should only see your AI company (for example `api.anthropic.com`) and GitHub, shortly after the app starts and every 12 hours, unless Update checks is off. Apart from an update installing on macOS, you should see no listening ports.
 - **Mac:** [LuLu](https://objective-see.org/products/lulu.html) (free and open source) or Little Snitch. Both ask before a program connects anywhere, and show you where.
 
 What you see should match the app’s Connections page.
@@ -165,7 +165,7 @@ What you see should match the app’s Connections page.
 
 ## Credits
 
-NeverQuestAlone is built on [chelinho139/wow-ai](https://github.com/chelinho139/wow-ai) (MIT). [Credits](CREDITS.md) · [MIT license](LICENSE)
+NeverQuestAlone is built on [chelinho139/wow-ai](https://github.com/chelinho139/wow-ai) (MIT). The addon’s code is in its download, under the [MIT license](LICENSE). The app’s source isn’t public yet. [Credits](CREDITS.md)
 
 ---
 

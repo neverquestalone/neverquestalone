@@ -21,12 +21,12 @@ NeverQuestAlone runs on your computer and talks to the AI company you choose. Th
 | **Your character’s name, realm and guild** | **Not sent.** The AI sees “your character” instead | Your data page: “Character name” (off) |
 | **Your character’s game data:** level, class, race, zone and position, money, experience, talents, professions, and your quest log (each quest’s ID and title, and which are ready to turn in) | **Sent** with each message (game data is on by default) | Your data page: “Game data”; or for one message, the Game Data box above the window’s message box |
 | **Check-in data:** quest objectives and levels, gear and item levels, nearby points of interest | Sent only if you turn check-ins on (they’re **off** by default) | Settings page: “Check-ins” (off) |
-| **Items you link** | The item’s tooltip text. For now, that can include a line another addon adds to the tooltip, such as a bag addon naming your other characters | — |
+| **Items you link** | The item’s tooltip text and, for gear, the matching piece you wear: its name, item level and tooltip. For now, that can include a line another addon adds to the tooltip, such as a bag addon naming your other characters | — |
 | **Other players’ names from the game:** your target, players you shift-click, “Made by” lines on items | **Swapped** for stand-ins like “Player A” before sending. The stand-in stays the same until you quit, and is swapped back in the reply on your computer | Your data page: “Other players’ names” (off) |
 | **Names you type yourself** | Sent as you typed them (the app can’t tell a name from any other word) | — |
 | **Other players’ chat** | **Never read.** The addon doesn’t listen to chat at all | — |
 | **Memory:** short notes the app keeps about your character’s progress | Sent as a labeled summary with each message | Settings > Show more > Memory: Forget all (Last request’s raw request shows them) |
-| **Your chat history** | **Stays on your computer**, deleted after 30 days | Settings > Show more > Chat history (days kept, Delete all) |
+| **Your chat history** | **Stays on your computer.** The app deletes its copy after 30 days. The addon keeps a copy of each chat, up to its last 200 lines, in WoW’s saved files until you delete the chat in game or uninstall with the addon. | Settings > Show more > Chat history (days kept, Delete all) |
 | **A random install ID**, only if you use OpenAI | Sent to OpenAI as its “safety identifier”, so abuse is handled per install rather than per key. It’s random, not based on your hardware | Your data > Show details > Replace ID |
 | **Anything to us** | **Nothing.** No telemetry, analytics or crash reports | — |
 | **Update checks** | GitHub sees your IP address and the app’s version, as with any download | Settings > Show more > About: “Update checks” |

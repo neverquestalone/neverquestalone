@@ -20,7 +20,7 @@
   <img src="images/ask.webp" alt="An answer in the HUD: the oozes are in the Wailing Caverns oasis pools, pinned on your map, with a Follow Pin button." width="49%" align="top">
 </p>
 
-**It never plays for you.** No key presses or mouse clicks, no memory reading, nothing posted to chat. The AI can only write text into Bones’s window.
+**It never plays for you.** No key presses or mouse clicks, no memory reading, nothing posted to chat. The AI can only write text: replies in Bones’s window, and routes and pins on your map, which the app checks first.
 
 **Free, no account, no tracking.** You pay your AI company only for what you use.
 
@@ -90,7 +90,7 @@ On Claude Sonnet 5.5, Claude’s default, 40 replies a day cost about $0.76–1.
 - **Nothing goes to us.** There’s no NeverQuestAlone account, server, analytics or tracking.
 - **Your messages and game data go only to the AI you pick.** Your character’s name, realm and guild stay out unless you turn them on.
 - **Your key stays on your computer**, in your macOS Keychain or Windows Credential Manager, and goes only to its own AI company.
-- **Your chat history stays on your computer** and is deleted after 30 days. You can change that in the app.
+- **Your chat history stays on your computer.** The app deletes its copy after 30 days, and you can change that. The addon keeps a copy of each chat, up to its last 200 lines, in WoW’s saved files until you delete the chat in game or uninstall with the addon.
 - **You can see everything.** On the app’s Your data page, Last request shows exactly what was sent, and Connections lists every address the app talked to.
 
 More: [Privacy in NeverQuestAlone](PRIVACY.md).
@@ -113,7 +113,7 @@ More: [Privacy in NeverQuestAlone](PRIVACY.md).
 
 ### Is it allowed? Will I get banned?
 
-It works like the addons players have used for years: it runs on the game’s own addon tools and never moves, targets, fights or posts to chat for you. Its quality-of-life options, like Auto Accept Quests and Auto Sell Junk, only finish what your own click opened. Blizzard has the final say.
+The addon follows [Blizzard’s add-on policy](https://us.forums.blizzard.com/en/wow/t/ui-add-on-development-policy/24534): it runs on the game’s own addon tools and never moves, targets, fights or posts to chat for you, and its quality-of-life options, like Auto Accept Quests and Auto Sell Junk, only finish what your own click opened. The app sends no key presses or clicks and never reads the game’s memory. Blizzard has the final say.
 
 ### What’s an API key?
 
@@ -164,7 +164,7 @@ A security problem? Report it privately on the Security tab (Report a vulnerabil
 
 ## Credits and license
 
-NeverQuestAlone is built on [wow-ai](https://github.com/chelinho139/wow-ai) by chelinho139, with thanks to [0xInuarashi’s wow-forever-codex](https://github.com/0xinuarashi/wow-forever-codex). [Credits](CREDITS.md) · [MIT license](LICENSE)
+NeverQuestAlone is built on [wow-ai](https://github.com/chelinho139/wow-ai) by chelinho139, with thanks to [0xInuarashi’s wow-forever-codex](https://github.com/0xinuarashi/wow-forever-codex). The addon’s code is in its download, under the [MIT license](LICENSE). The app’s source isn’t public yet; this repository holds the docs and releases. [Credits](CREDITS.md)
 
 ---
 

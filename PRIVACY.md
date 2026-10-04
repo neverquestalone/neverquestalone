@@ -26,7 +26,7 @@ NeverQuestAlone runs on your computer and talks to the AI company you choose. Th
 | **Names you type yourself** | Sent as you typed them (the app can’t tell a name from any other word) | — |
 | **Other players’ chat** | **Never read.** The addon doesn’t listen to chat at all | — |
 | **Memory:** short notes the app keeps about your character’s progress | Sent as a labeled summary with each message | Settings > Show more > Memory: Forget all (Last request’s raw request shows them) |
-| **Your chat history** | **Stays on your computer.** The app deletes its copy after 30 days. The addon keeps a copy of each chat, up to its last 200 lines, in WoW’s saved files until you delete the chat in game or uninstall with the addon. | Settings > Show more > Chat history (days kept, Delete all) |
+| **Your chat history** | **Stays on your computer.** The app deletes its copy after 30 days. The addon keeps each chat’s last 200 replies and messages in WoW’s saved files until you delete the chat in game or uninstall with the addon. | Settings > Show more > Chat history (days kept, Delete all); in game, right-click the chat in the window’s list, then Delete |
 | **A random install ID**, only if you use OpenAI | Sent to OpenAI as its “safety identifier”, so abuse is handled per install rather than per key. It’s random, not based on your hardware | Your data > Show details > Replace ID |
 | **Anything to us** | **Nothing.** No telemetry, analytics or crash reports | — |
 | **Update checks** | GitHub sees your IP address and the app’s version, as with any download | Settings > Show more > About: “Update checks” |
@@ -36,7 +36,7 @@ NeverQuestAlone runs on your computer and talks to the AI company you choose. Th
 
 **Uninstalling** removes all of it, your saved keys too. If you choose, it also removes the addon from WoW, with its folders and the chat history it keeps there. To remove a key without uninstalling, click Delete key on the app’s Your AI page. On Windows, removing the app in Settings > Apps removes the addon and its chat history in WoW too.
 
-**On your screen,** the app reads only the top of WoW’s window, where the addon draws, so your messages go at once. It doesn’t look at the rest of your screen. Turn off **Screen reading** on the app’s Your data page, or **Screen Reading** in the addon’s Settings (under What Bones Knows), and it reads nothing; off in either place wins. Your messages then wait for a reload, and replies still come in. [How it works](HOW-IT-WORKS.md#no-screen-reading) has the details.
+**On your screen,** the app reads only the top of WoW’s window, where the addon draws, so your messages go at once. It doesn’t look at the rest of your screen and keeps no pictures; on Windows, a window over that spot is read too. Turn off **Screen reading** on the app’s Your data page, or **Screen Reading** in the addon’s Settings (under What Bones Knows), and it reads nothing on screen; off in either place wins. Your messages then wait for a reload, and replies still come in. [How it works](HOW-IT-WORKS.md#no-screen-reading) has the details.
 
 ## Why these defaults
 

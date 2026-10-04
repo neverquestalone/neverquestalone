@@ -20,7 +20,7 @@
   <img src="images/ask.webp" alt="An answer in the HUD: the oozes are in the Wailing Caverns oasis pools, pinned on your map, with a Follow Pin button." width="49%" align="top">
 </p>
 
-**It never plays for you.** No key presses or mouse clicks, no memory reading, nothing posted to chat. The AI can only write text: replies in Bones’s window, and routes and pins on your map, which the app checks first.
+**It never plays for you.** No key presses or mouse clicks, no memory reading, nothing posted to chat. The AI can only write replies in Bones’s window and routes and pins on your map, which the app checks first.
 
 **Free, no account, no tracking.** You pay your AI company only for what you use.
 
@@ -90,7 +90,7 @@ On Claude Sonnet 5.5, Claude’s default, 40 replies a day cost about $0.76–1.
 - **Nothing goes to us.** There’s no NeverQuestAlone account, server, analytics or tracking.
 - **Your messages and game data go only to the AI you pick.** Your character’s name, realm and guild stay out unless you turn them on.
 - **Your key stays on your computer**, in your macOS Keychain or Windows Credential Manager, and goes only to its own AI company.
-- **Your chat history stays on your computer.** The app deletes its copy after 30 days, and you can change that. The addon keeps a copy of each chat, up to its last 200 lines, in WoW’s saved files until you delete the chat in game or uninstall with the addon.
+- **Your chat history stays on your computer.** The app deletes its copy after 30 days, and you can change that. The addon keeps each chat’s last 200 replies and messages in WoW’s saved files until you delete the chat in game or uninstall with the addon.
 - **You can see everything.** On the app’s Your data page, Last request shows exactly what was sent, and Connections lists every address the app talked to.
 
 More: [Privacy in NeverQuestAlone](PRIVACY.md).

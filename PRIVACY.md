@@ -32,7 +32,7 @@ NeverQuestAlone runs on your computer and talks to the AI company you choose. Th
 | **Update checks** | GitHub sees your IP address and the app’s version, as with any download | Settings > Show more > About: “Update checks” |
 | **Spell-check dictionaries** | Never downloaded: spell check is off in every window | — |
 
-**On your computer,** the app keeps your chat history, memory notes, usage totals and logs in a folder only your user account can read. Logs never contain your key, and the diagnostics you copy for a bug report hold no messages, replies or error text from your AI company.
+**On your computer,** the app keeps your chat history, memory notes, usage totals and logs in a folder only your user account can read. On a work PC with a roaming profile, Windows also copies your chat history, memory notes and usage totals to your organization’s server with the rest of your profile, as it does your saved keys. Logs never contain your key, and the diagnostics you copy for a bug report hold no messages, replies or error text from your AI company.
 
 **Uninstalling** removes all of it, your saved keys too. If you choose, it also removes the addon from WoW, with its folders and the chat history it keeps there. To remove a key without uninstalling, click Delete key on the app’s Your AI page. On Windows, removing the app in Settings > Apps removes the addon and its chat history in WoW too.
 

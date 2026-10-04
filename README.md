@@ -43,7 +43,7 @@ Download NeverQuestAlone for [Mac](https://github.com/neverquestalone/neverquest
 
 ### 2 Connect your AI
 
-<img src="images/connect-your-ai.webp" alt="The NeverQuestAlone app at Connect your AI: Claude, ChatGPT, Grok, Gemini and Other, each with what a day of play costs." width="560">
+<img src="images/connect-your-ai.webp" alt="The NeverQuestAlone app at Connect your AI: Claude, ChatGPT, Grok, Gemini and Other, each with what a day of play costs." width="720">
 
 1. Pick an AI, like Claude.
 2. Click **Open Anthropic’s key page**, make a key and copy it. Add a few dollars of credit there too.

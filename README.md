@@ -2,11 +2,11 @@
 
 <img src="images/icon.png" alt="" width="96" align="right">
 
-**Always know where to go next.** NeverQuestAlone is a free quest companion for World of Warcraft®: Forever. Bones, the skull by your quest tracker, plans your quests and redraws your route on the map as you play. Bones runs on the AI you pick: Claude, ChatGPT, Grok or Gemini with your own API key, another OpenAI-compatible service, or a model on your own computer.
+**Always know where to go next.** NeverQuestAlone is a free quest companion for World of Warcraft®: Forever. It sits by your quest tracker, plans your quests and redraws your route on the map as you play. It runs on the AI you pick: Claude, ChatGPT, Grok or Gemini with your own API key, another OpenAI-compatible service, or a model on your own computer.
 
-**[Download for Mac](https://github.com/neverquestalone/neverquestalone/releases/latest/download/NeverQuestAlone-mac.dmg)** · **[Download for Windows](https://github.com/neverquestalone/neverquestalone/releases/latest/download/NeverQuestAlone-Setup.exe)** · [All downloads](https://github.com/neverquestalone/neverquestalone/releases/latest)
+**[Download for Mac](https://github.com/tommygeoco/neverquestalone/releases/latest/download/NeverQuestAlone-mac.dmg)** · **[Download for Windows](https://github.com/tommygeoco/neverquestalone/releases/latest/download/NeverQuestAlone-Setup.exe)** · [All downloads](https://github.com/tommygeoco/neverquestalone/releases/latest)
 
-<img src="images/route.jpg" alt="The Barrens on the world map: Bones’s route joins your quest pins with colored lines, from the next stop beside your arrow at the Wailing Caverns." width="100%">
+<img src="images/route.jpg" alt="The Barrens on the world map: your route joins your quest pins with colored lines, from the next stop beside your arrow at the Wailing Caverns." width="100%">
 
 ## What it does
 
@@ -16,11 +16,11 @@
 - **Less clicking, if you want it.** Quality-of-life options like Auto Accept Quests and Auto Sell Junk finish what you start: talk to a quest giver and the quest is accepted; open a vendor and your gray items are sold. They’re off until you turn them on.
 
 <p>
-  <img src="images/next-stop.webp" alt="Bones’s HUD in game: the next quest, an arrow and 194 yards to it, with where to look." width="49%" align="top">
+  <img src="images/next-stop.webp" alt="The HUD in game: the next quest, an arrow and 194 yards to it, with where to look." width="49%" align="top">
   <img src="images/ask.webp" alt="An answer in the HUD: the oozes are in the Wailing Caverns oasis pools, pinned on your map, with a Follow Pin button." width="49%" align="top">
 </p>
 
-**It never plays for you.** No key presses or mouse clicks, no memory reading, nothing posted to chat. The AI can only write replies in Bones’s window and routes and pins on your map, which the app checks first.
+**It never plays for you.** No key presses or mouse clicks, no memory reading, nothing posted to chat. The AI can only write replies in the chat window and routes and pins on your map, which the app checks first.
 
 **Free, no account, no tracking.** You pay your AI company only for what you use.
 
@@ -36,7 +36,7 @@ It takes 2–3 minutes once you have an API key. You need:
 
 ### 1 Download
 
-Download NeverQuestAlone for [Mac](https://github.com/neverquestalone/neverquestalone/releases/latest/download/NeverQuestAlone-mac.dmg) or [Windows](https://github.com/neverquestalone/neverquestalone/releases/latest/download/NeverQuestAlone-Setup.exe).
+Download NeverQuestAlone for [Mac](https://github.com/tommygeoco/neverquestalone/releases/latest/download/NeverQuestAlone-mac.dmg) or [Windows](https://github.com/tommygeoco/neverquestalone/releases/latest/download/NeverQuestAlone-Setup.exe).
 
 - **Mac:** open the `.dmg`, drag NeverQuestAlone to Applications and open it from there. If macOS asks whether you’re sure, click **Open**.
 - **Windows:** open `NeverQuestAlone-Setup.exe`. It installs and opens by itself. If Windows says “Windows protected your PC”, click **More info**, then **Run anyway**.
@@ -56,16 +56,15 @@ Using another service, or a model on your own computer? Pick **Other**, click **
 
 The defaults send the least that works: your character’s name, realm and guild stay out, and other players’ names are swapped for stand-ins. Change them later on the app’s Your data and Settings pages.
 
-### 3 Say hi in game
+### 3 Set up WoW
 
 1. **Install the addon.** Click **Install**. If WoW is open, click **Install when WoW closes** instead: new addons only load when the game starts.
 2. **Allow Screen Recording** (Mac only). Click **Allow**, then **Open System Settings** in the macOS box, and turn on NeverQuestAlone. The app only reads the top of the game window, where the addon draws.
-3. **Start WoW** and log in. Bones meets you by your quest tracker.
-4. **Say hi.** Click **Say Hi**, or type `/bones hi` in chat. When Bones answers, you’re set.
+3. **Turn it on in WoW.** Start WoW, or restart it if it was open. At character select, click **AddOns** and check NeverQuestAlone, then log in. NeverQuestAlone shows up by your quest tracker, and you’re set.
 
 NeverQuestAlone lives in your menu bar (on Windows, the system tray by the clock).
 
-**No app?** The addon also works on its own with Copy and Paste: you copy each message into any AI chat and paste the reply back. Download `NeverQuestAlone-addon.zip` from the [releases page](https://github.com/neverquestalone/neverquestalone/releases/latest) and unzip it into the `Interface/AddOns` folder inside your World of Warcraft `_forever_` folder.
+**No app?** The addon also works on its own with Copy and Paste: you copy each message into any AI chat and paste the reply back. Download `NeverQuestAlone-addon.zip` from the [releases page](https://github.com/tommygeoco/neverquestalone/releases/latest) and unzip it into the `Interface/AddOns` folder inside your World of Warcraft `_forever_` folder.
 
 ## What it costs
 
@@ -99,15 +98,17 @@ More: [Privacy in NeverQuestAlone](PRIVACY.md).
 
 | Command | What it does |
 |---|---|
-| `/bones` | Opens or closes the window (`/nqa` does the same) |
-| `/bones <question>` | Asks Bones a question |
-| `/bones hi` | Says hi (the first time, it finishes setup) |
-| `/bones settings` | Opens Settings |
-| `/bones qol` | Opens Quality of Life in Settings |
-| `/bones reading off` | Stops the app reading your screen: messages wait for a reload (see [No screen reading](HOW-IT-WORKS.md#no-screen-reading)). `/bones reading on` turns it back on, unless it’s off on the app’s Your data page |
-| `/bones paste` | Opens Copy and Paste again, when you play without the app |
-| `/bones diag` | Shows diagnostics for a bug report |
-| `/bones help` | Shows the main commands. `/bones help all` shows every one |
+| `/nqa` | Opens or closes the window |
+| `/nqa <question>` | Asks a question |
+| `/nqa hi` | Says hi |
+| `/nqa settings` | Opens Settings |
+| `/nqa qol` | Opens Quality of Life in Settings |
+| `/nqa reading off` | Stops the app reading your screen: messages wait for a reload (see [No screen reading](HOW-IT-WORKS.md#no-screen-reading)). `/nqa reading on` turns it back on, unless it’s off on the app’s Your data page |
+| `/nqa paste` | Opens Copy and Paste again, when you play without the app |
+| `/nqa diag` | Shows diagnostics for a bug report |
+| `/nqa help` | Shows the main commands. `/nqa help all` shows every one |
+
+`/bones` still works.
 
 ## Questions
 
@@ -141,7 +142,7 @@ It names the fix, usually in the app: a new key, more credit, a higher spend lim
 
 ### An update broke something
 
-Download the version before it from the [releases page](https://github.com/neverquestalone/neverquestalone/releases) and install it over this one.
+Download the version before it from the [releases page](https://github.com/tommygeoco/neverquestalone/releases) and install it over this one.
 
 ### How do I uninstall?
 
@@ -153,12 +154,12 @@ Watch the network with [LuLu](https://objective-see.org/products/lulu.html) or L
 
 ## Report a bug
 
-[Open an issue](https://github.com/neverquestalone/neverquestalone/issues) and attach the diagnostics from the app (Settings > Show more > Diagnostics > Copy diagnostics).
+[Open an issue](https://github.com/tommygeoco/neverquestalone/issues) and attach the diagnostics from the app (Settings > Show more > Diagnostics > Copy diagnostics).
 
 - They hold the app and addon versions, your system, whether screen reading works, how many replies fit before your next reload, the kinds of errors, and the last 200 log lines.
 - Keys, the code that links the addon to the app, and your home folder’s paths are taken out, and there are no messages, replies or error text from your AI company.
 
-**Never paste an API key**, and don’t paste `/bones diag full` output, which shows the code that links the addon to the app.
+**Never paste an API key**, and don’t paste `/nqa diag full` output, which shows the code that links the addon to the app.
 
 A security problem? Report it privately on the Security tab (Report a vulnerability), never in a public issue.
 

@@ -1,6 +1,6 @@
 # How NeverQuestAlone works
 
-NeverQuestAlone is a quest companion for World of Warcraft®: Forever. Bones, the skull by your quest tracker, plans your quests, redraws your route on the map as you play and answers your questions in a window inside the game. Bones thinks with the AI you pick: through the NeverQuestAlone app with your own API key, or by Copy and Paste with any AI chat.
+NeverQuestAlone is a quest companion for World of Warcraft®: Forever. It sits by your quest tracker, plans your quests, redraws your route on the map as you play and answers your questions in a window inside the game. It thinks with the AI you pick: through the NeverQuestAlone app with your own API key, or by Copy and Paste with any AI chat.
 
 This page explains exactly what it does, what leaves your computer, and how to check all of it yourself.
 
@@ -32,12 +32,12 @@ flowchart LR
 
 ## One message, start to finish
 
-1. You type a message in Bones’s window and press Enter.
+1. You type a message in the chat window and press Enter.
 2. The addon draws the message as a strip of small colored squares along the top of the game window, from its left edge. If game data is on, your own character’s level, class, zone and quests go along.
 3. The capture helper reads only the top of the game window (a band about 300 points tall, as wide as the strip needs and never wider than the window, a few times a second) and decodes the strip. It doesn’t look at the rest of your screen. On Windows it reads that part of your screen, so anything you put over it is read too, and never kept.
 4. The app checks your daily spend limit, if you set one, and sends the request to your AI company over HTTPS. Your key goes only in that request, only to that company.
 5. When the reply comes back, the app removes anything in it that could pass for game text or a link, writes it into one of the parts, and changes a short sound file the addon listens for.
-6. The addon hears it, loads the reply and shows it in Bones’s window. Nothing is posted to chat.
+6. The addon hears it, loads the reply and shows it in the chat window. Nothing is posted to chat.
 
 The strip only shows while a message is waiting. Replies usually arrive a few seconds after the AI finishes. That sound-file trick needs Enable Sound on in the game’s sound settings. With it off, the addon checks on a timer instead (after 5, 12, 25 and 45 seconds), and tells you so in game.
 
@@ -48,17 +48,17 @@ These are fixed rules. Tests run on every build to check the addon’s side, for
 1. **No input to the game.** No key presses, mouse or controller events, ever.
 2. **No memory reads or writes, no injection.** Nothing hooks into the game or changes the game’s own files. Outside its own files, the app reads only the top of the game window, the addon’s saved file and the game’s version number (to keep the addon loading after a patch), and writes only its own addon files.
 3. **Nothing happens without you.** Every message starts with your click or key press, except check-ins, which are off until you turn them on. Nothing is posted to chat, mail or other players. The addon calls no protected functions, so it can’t move, cast, target or trade.
-4. **No combat data.** The strip carries only what you typed and your own character’s state. Bones never checks in during combat.
+4. **No combat data.** The strip carries only what you typed and your own character’s state. NeverQuestAlone never checks in during combat.
 
 It never reads other players’ chat, your guild roster or your friends list.
 
-**The AI can’t act either.** It has no tools: it can’t run commands, read or write files, browse the web, send messages or spend money. It can only write replies in Bones’s window and routes and pins on your map, which the app checks first. Web addresses in a reply show as plain text you can’t click, and item and quest links are rebuilt by the addon from numbers only.
+**The AI can’t act either.** It has no tools: it can’t run commands, read or write files, browse the web, send messages or spend money. It can only write replies in the chat window and routes and pins on your map, which the app checks first. Web addresses in a reply show as plain text you can’t click, and item and quest links are rebuilt by the addon from numbers only.
 
 ## No screen reading
 
-Turn off **Screen reading** on the app’s Your data page, or **Screen Reading** in the addon’s Settings (under What Bones Knows), or type `/bones reading off`; off in either place wins. With screen reading off, the addon draws no strip and the app stops its capture helper, so nothing on your screen is read (on a Mac, the Screen Recording indicator goes off). Your messages wait in the addon’s saved data and go when you reload the game’s interface (click Reload above the chat window; a short loading screen, never in combat). Replies still come in on their own. To switch back, turn it on where you turned it off (`/bones reading on` for the addon’s); the addon’s switch takes effect at your next reload.
+Turn off **Screen reading** on the app’s Your data page, or **Screen Reading** in the addon’s Settings (under What NeverQuestAlone Knows), or type `/nqa reading off`; off in either place wins. With screen reading off, the addon draws no strip and the app stops its capture helper, so nothing on your screen is read (on a Mac, the Screen Recording indicator goes off). Your messages wait in the addon’s saved data and go when you reload the game’s interface (click Reload above the chat window; a short loading screen, never in combat). Replies still come in on their own. To switch back, turn it on where you turned it off (`/nqa reading on` for the addon’s); the addon’s switch takes effect at your next reload.
 
-`/bones mode reload` is stricter still: replies also wait for a reload. `/bones mode pixel` switches back.
+`/nqa mode reload` is stricter still: replies also wait for a reload. `/nqa mode pixel` switches back.
 
 ## What leaves your computer
 
@@ -70,7 +70,7 @@ Your messages, and if you choose, your own character’s game data, go to the AI
 
 ## Your key
 
-- **It goes in through the app only,** never the game. If you paste something that looks like a key into Bones’s window by mistake, the addon won’t send it: “That looks like an API key, so it wasn’t sent. Keys go in the NeverQuestAlone app, never in game.” The app won’t send one either, if it ever gets that far.
+- **It goes in through the app only,** never the game. If you paste something that looks like a key into the chat window by mistake, the addon won’t send it: “That looks like an API key, so it wasn’t sent. Keys go in the NeverQuestAlone app, never in game.” The app won’t send one either, if it ever gets that far.
 - **It’s saved where your system keeps passwords:** your macOS Keychain, or Windows Credential Manager.
 - **It’s only read when a request goes out,** and only sent to that AI company.
 - **It never goes into** the game, the game’s saved data, the strip, the parts, the app’s settings file, its logs, crash output or any other program.
@@ -106,7 +106,7 @@ AI companies bill in tokens, small chunks of text. One request is at most 20,000
 
 </details>
 
-One safety catch that normal play never reaches: if something went wrong and the game sent a burst of check-ins (more than 10 in a minute, or 60 in an hour), Bones pauses them and says so once in the Check-ins chat: “Bones paused check-ins: your next message turns them back on.” Your next message starts them again, and the check-ins it held go along with that message.
+One safety catch that normal play never reaches: if something went wrong and the game sent a burst of check-ins (more than 10 in a minute, or 60 in an hour), NeverQuestAlone pauses them and says so once in the Check-ins chat: “NeverQuestAlone paused check-ins: your next message turns them back on.” Your next message starts them again, and the check-ins it held go along with that message.
 
 When something goes wrong (a rejected key, no credit, a busy AI, a spend limit reached), you see one plain line in game with the next step, and the fix is in the app. The app never switches to another AI on its own.
 
@@ -128,7 +128,7 @@ In normal use the app has no listening network port. There is one short exceptio
 
 ## What other addons can see
 
-Every addon can read what’s inside the game: that’s how the game works, and no addon can change it. So other addons can read the replies and history in Bones’s window, and the spending line in its header. Your key is never there. The app’s **Replies in chat frame** switch (Settings > Show more) is off by default, because chat-logging addons keep copies of the chat frame.
+Every addon can read what’s inside the game: that’s how the game works, and no addon can change it. So other addons can read the replies and history in the chat window, and the spending line in its header. Your key is never there. The app’s **Replies in chat frame** switch (Settings > Show more) is off by default, because chat-logging addons keep copies of the chat frame.
 
 ## Updates
 

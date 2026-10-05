@@ -1,6 +1,6 @@
 # Security
 
-Found a security problem in NeverQuestAlone? Don’t post it in a public issue. Report it privately instead: open this repository’s [Security tab](https://github.com/neverquestalone/neverquestalone/security) and click Report a vulnerability. Only the people who make NeverQuestAlone can see it.
+Found a security problem in NeverQuestAlone? Don’t post it in a public issue. Report it privately instead: open this repository’s [Security tab](https://github.com/tommygeoco/neverquestalone/security) and click Report a vulnerability. Only the people who make NeverQuestAlone can see it.
 
 Leave out your API key, the code that links the addon to the app, and anything from Last request you’d rather keep private.
 

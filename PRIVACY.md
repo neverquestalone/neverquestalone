@@ -4,7 +4,7 @@ NeverQuestAlone runs on your computer and talks to the AI company you choose. Th
 
 ## The short version
 
-- **We get nothing.** No account, no server, no analytics, no crash reports.
+- **We get nothing from the app.** No account, no server, no analytics, no crash reports. The website (neverquestalone.com) counts visits with Vercel Web Analytics: no cookies, and nothing that identifies you.
 - **Your messages go only to the AI you pick**, with your own character’s game data (on by default).
 - **Your name, realm and guild stay out** unless you turn them on. Other players’ names from the game are swapped for stand-ins.
 - **Other players’ chat is never read.**
@@ -36,7 +36,7 @@ NeverQuestAlone runs on your computer and talks to the AI company you choose. Th
 
 **Uninstalling** removes all of it, your saved keys too. If you choose, it also removes the addon from WoW, with its folders and the chat history it keeps there. To remove a key without uninstalling, click Delete key on the app’s Your AI page. On Windows, removing the app in Settings > Apps removes the addon and its chat history in WoW too.
 
-**On your screen,** the app reads only the top of WoW’s window, where the addon draws, so your messages go at once. It doesn’t look at the rest of your screen and keeps no pictures; on Windows, a window over that spot is read too. Turn off **Screen reading** on the app’s Your data page, or **Screen Reading** in the addon’s Settings (under What Bones Knows), and it reads nothing on screen; off in either place wins. Your messages then wait for a reload, and replies still come in. [How it works](HOW-IT-WORKS.md#no-screen-reading) has the details.
+**On your screen,** the app reads only the top of WoW’s window, where the addon draws, so your messages go at once. It doesn’t look at the rest of your screen and keeps no pictures; on Windows, a window over that spot is read too. Turn off **Screen reading** on the app’s Your data page, or **Screen Reading** in the addon’s Settings (under What NeverQuestAlone Knows), and it reads nothing on screen; off in either place wins. Your messages then wait for a reload, and replies still come in. [How it works](HOW-IT-WORKS.md#no-screen-reading) has the details.
 
 ## Why these defaults
 
@@ -101,7 +101,7 @@ World of Warcraft is rated T, and each AI company sets its own age and use rules
 
 ## Questions
 
-[Open an issue](https://github.com/neverquestalone/neverquestalone/issues). Leave out your key, the code that links the addon to the app, and anything from Last request you’d rather keep private.
+[Open an issue](https://github.com/tommygeoco/neverquestalone/issues). Leave out your key, the code that links the addon to the app, and anything from Last request you’d rather keep private.
 
 A security problem? Report it privately on the Security tab (Report a vulnerability), never in a public issue.
 

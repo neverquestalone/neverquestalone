@@ -60,7 +60,7 @@ The defaults send the least that works: your character’s name, realm and guild
 
 1. **Install the addon.** Click **Install**. If WoW is open, click **Install when WoW closes** instead: new addons only load when the game starts.
 2. **Allow Screen Recording** (Mac only). Click **Allow**, then **Open System Settings** in the macOS box, and turn on NeverQuestAlone. The app only reads the top of the game window, where the addon draws.
-3. **Turn it on in WoW.** Start WoW, or restart it if it was open. At character select, click **AddOns** and check NeverQuestAlone, then log in. NeverQuestAlone shows up by your quest tracker, and you’re set.
+3. **Turn on the addon.** Start WoW (if it was open while the addon installed, quit it and start it again). At character select, click **AddOns** and make sure NeverQuestAlone is checked, then log in. NeverQuestAlone shows up beside your quest tracker, and you’re set.
 
 NeverQuestAlone lives in your menu bar (on Windows, the system tray by the clock).
 
@@ -75,6 +75,7 @@ The app is free, and NeverQuestAlone sets no limits of its own. You pay your AI 
 | **Claude, ChatGPT, Grok or Gemini** | An API key from Anthropic, OpenAI, xAI or Google, with a few dollars of credit | Pay as you go (example below) |
 | **Other: an OpenAI-compatible service** | Its address, a key if it takes one, and a model’s name (OpenRouter, Groq, Together and others) | That service’s prices |
 | **Other: a model on your computer** | Ollama (`http://localhost:11434/v1`) or LM Studio (`http://localhost:1234/v1`) with a model downloaded | Free. What you ask stays on your computer. The model shares your graphics card with the game |
+| **Other: a model on your home network** | Ollama or LM Studio on another computer at home, by its address (like `http://192.168.1.20:11434/v1`) | Free. What you ask goes only to that computer |
 
 On Claude Sonnet 5.5, Claude’s default, 40 replies a day cost about $0.76–1.22, so $5 of credit lasts 4 to 7 days. That’s about 1.9–3.0¢ a reply. The app shows your real figures.
 

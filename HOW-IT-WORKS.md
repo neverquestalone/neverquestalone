@@ -28,7 +28,7 @@ flowchart LR
 - **The parts** are 200 small addons, NeverQuestAlone Part 001 to Part 200 (folders `NQA_S001` to `NQA_S200`). Each one holds one reply at a time. The AddOns list folds them under NeverQuestAlone Parts: leave them checked.
 - **The app** sits in your menu bar or system tray. It holds your settings and your key, talks to your AI company, and keeps your chat history on your computer.
 - **The capture helper** is a small program the app runs while Screen reading is on. It reads only while WoW is open, only the top of the game window, where the addon draws, and it has no network code.
-- **Your AI:** Claude, ChatGPT, Grok or Gemini with your own key from Anthropic, OpenAI, xAI or Google; or Other: any OpenAI-compatible service at its own address (OpenRouter, Groq, Together, or Ollama or LM Studio on your own computer), with its key if it takes one.
+- **Your AI:** Claude, ChatGPT, Grok or Gemini with your own key from Anthropic, OpenAI, xAI or Google; or Other: any OpenAI-compatible service at its own address (OpenRouter, Groq, Together, or Ollama or LM Studio on your own computer or another one at home), with its key if it takes one.
 
 ## One message, start to finish
 

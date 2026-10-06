@@ -1,0 +1,15 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "redacted_api_key": "xai-…FIXT",
+    "team_id": "team-FIXTURE",
+    "acls": [],
+    "api_key_blocked": false,
+    "api_key_disabled": true,
+    "team_blocked": false
+  },
+  "source": "GET /v1/api-key [S57]"
+}

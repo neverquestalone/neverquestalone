@@ -1,0 +1,19 @@
+{
+  "status": 429,
+  "headers": {
+    "content-type": "application/json",
+    "retry-after": "20",
+    "anthropic-ratelimit-requests-limit": "1000",
+    "anthropic-ratelimit-requests-remaining": "0",
+    "anthropic-ratelimit-requests-reset": "2026-09-26T12:00:20Z"
+  },
+  "body": {
+    "type": "error",
+    "error": {
+      "type": "rate_limit_error",
+      "message": "This request would exceed the rate limit for your organization."
+    },
+    "request_id": "req_011FIXTURE"
+  },
+  "source": "rate-limits page [S7]"
+}

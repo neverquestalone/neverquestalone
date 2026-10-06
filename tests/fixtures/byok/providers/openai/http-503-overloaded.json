@@ -1,0 +1,16 @@
+{
+  "status": 503,
+  "headers": {
+    "content-type": "application/json",
+    "retry-after": "2"
+  },
+  "body": {
+    "error": {
+      "message": "The server is overloaded.",
+      "type": "service_unavailable_error",
+      "param": null,
+      "code": "server_is_overloaded"
+    }
+  },
+  "source": "error-codes guide [S29]"
+}

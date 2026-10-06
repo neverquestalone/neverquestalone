@@ -1,0 +1,34 @@
+# machine-specific / runtime state
+bridge/config.json
+bridge/state.json
+bridge/transcripts.json
+bridge/bridge.log
+bridge/tmp/
+*.tmp
+
+# tooling
+node_modules/
+tests/tmp/
+
+# OS / local artifacts
+.DS_Store
+*.zip
+dist/
+bridge/probe.png
+bridge/mapjobs/
+__pycache__/
+
+# NeverQuestAlone
+bridge/capture/mac/.build/
+bridge/capture/mac/build/
+bridge/capture/mac/build-public/
+bridge/capture/mac/.build-public/
+bridge/capture/mac/.build-universal/
+bridge/capture/mac/.build-public-universal/
+bridge/capture/windows/build/
+tests/fixtures/live-raw/
+*.p12
+.claude/worktrees/
+
+# The scrub scanner's private terms (PRD §15, B6.1): never tracked; see tools/scrub-terms.example.txt
+tools/scrub-terms.txt

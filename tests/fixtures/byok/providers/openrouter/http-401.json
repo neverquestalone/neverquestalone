@@ -1,0 +1,13 @@
+{
+  "status": 401,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "error": {
+      "code": 401,
+      "message": "No auth credentials found"
+    }
+  },
+  "source": "errors-and-debugging [S66]"
+}

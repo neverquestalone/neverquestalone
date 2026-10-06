@@ -1,0 +1,10 @@
+{
+  "status": 401,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "error": "Incorrect API key provided."
+  },
+  "source": "debugging page [S53]: 401 bad or missing key; body shape undocumented"
+}

@@ -1,0 +1,10 @@
+{
+  "appId": "com.example.app",
+  "productName": "Example App",
+  "name": "example-app",
+  "keychainService": "Example App",
+  "captureHelper": null,
+  "nsisGuid": "a9363681-8ca1-4fde-8b12-fb680970fdbd",
+  "releases": null,
+  "copyright": "Copyright © 2026 The Example App authors (MIT)"
+}

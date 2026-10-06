@@ -1,0 +1,6 @@
+{
+  "source": "Gemini API troubleshooting: 400 FAILED_PRECONDITION, 'User location is not supported for the API use.' UNVERIFIED.",
+  "status": 400,
+  "headers": { "content-type": "application/json" },
+  "body": [{ "error": { "code": 400, "message": "User location is not supported for the API use.", "status": "FAILED_PRECONDITION" } }]
+}

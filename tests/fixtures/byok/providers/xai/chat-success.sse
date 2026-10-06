@@ -1,0 +1,8 @@
+data: {"id":"c1","object":"chat.completion.chunk","model":"grok-4.3","choices":[{"index":0,"delta":{"role":"assistant","content":"Grok "},"finish_reason":null}]}
+
+data: {"id":"c1","object":"chat.completion.chunk","model":"grok-4.3","choices":[{"index":0,"delta":{"content":"fallback."},"finish_reason":"stop"}]}
+
+data: {"id":"c1","object":"chat.completion.chunk","model":"grok-4.3","choices":[],"usage":{"prompt_tokens":700,"completion_tokens":3,"total_tokens":703}}
+
+data: [DONE]
+

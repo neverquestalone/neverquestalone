@@ -1,0 +1,10 @@
+{
+  "appId": "com.neverquestalone.app",
+  "productName": "NeverQuestAlone",
+  "name": "neverquestalone",
+  "keychainService": "NeverQuestAlone",
+  "captureHelper": { "bundleId": "com.neverquestalone.capture", "app": "NeverQuestAlone Capture" },
+  "nsisGuid": "41dade80-3a47-5a7a-986a-4e589f1545a2",
+  "releases": { "owner": "tommygeoco", "repo": "neverquestalone" },
+  "copyright": "Copyright © 2026 chelinho139 and The NeverQuestAlone authors (MIT)"
+}

@@ -1,0 +1,15 @@
+{
+  "status": 404,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "type": "error",
+    "error": {
+      "type": "not_found_error",
+      "message": "model: claude-haiku-4-5"
+    },
+    "request_id": "req_011FIXTURE"
+  },
+  "source": "errors page [S4]"
+}

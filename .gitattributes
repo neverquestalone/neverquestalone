@@ -1,0 +1,6 @@
+# Keep every text file LF in the repo and on checkout; the scripts run fine that way on Windows.
+* text=auto eol=lf
+
+*.png binary
+*.wav binary
+*.jpg binary

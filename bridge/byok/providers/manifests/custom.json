@@ -1,0 +1,77 @@
+{
+  "schema": 1,
+  "id": "custom",
+  "name": "Other",
+  "custom": true,
+  "order": 90,
+  "hidden": false,
+  "local": false,
+  "adapter": "openai-chat",
+  "baseUrl": null,
+  "hosts": [],
+  "auth": { "header": "authorization", "scheme": "Bearer", "optional": true },
+  "headers": {},
+  "keyPattern": null,
+  "keyRejectPattern": null,
+  "keyMatchOrder": 100,
+  "keyExample": null,
+  "requestIdHeader": null,
+  "paths": { "chat": "/chat/completions", "models": "/models" },
+  "keyCheck": null,
+  "models": {
+    "default": null,
+    "smarter": null,
+    "allowAny": true,
+    "list": []
+  },
+  "effort": {},
+  "rateLimitHeaders": null,
+  "errorMap": {
+    "codes": {},
+    "types": {},
+    "status": {},
+    "notes": "Any OpenAI-compatible Chat Completions service at the player's own base URL (OpenRouter, Groq, Together, Ollama, LM Studio, …): the generic codes, types and statuses only. customManifest fills baseUrl, hosts, local and the one model from byok.custom."
+  },
+  "privacy": {
+    "class": "cloud",
+    "retention": "The service's own",
+    "trains": "The service's own",
+    "zdr": "The service's own",
+    "sets": "Nothing to set",
+    "notes": "Nothing is known about a service the player names; a server on this computer (localhost) keeps messages here.",
+    "player": {
+      "keeps": "Up to the service you connect. Check its privacy policy.",
+      "trains": "Up to the service you connect.",
+      "zeroRetention": "",
+      "sets": "Nothing extra."
+    },
+    "local": {
+      "class": "local",
+      "retention": "Local only",
+      "trains": "No",
+      "zdr": "n/a",
+      "player": {
+        "keeps": "Your messages stay on this {os:Mac}.",
+        "trains": "No.",
+        "zeroRetention": "",
+        "sets": "Nothing to set."
+      }
+    },
+    "sources": []
+  },
+  "terms": {
+    "login": "The service's own API key, or none for a server on this computer.",
+    "notes": ["OpenAI-compatible Chat Completions only: POST <base URL>/chat/completions, streamed."],
+    "playerNotes": [
+      "Works with OpenRouter, Groq, Together, Ollama, LM Studio and other OpenAI-compatible services."
+    ],
+    "sources": []
+  },
+  "defaultRequestOptions": {},
+  "safetyIdentifier": false,
+  "limits": { "maxOutputTokens": 1200, "testMaxTokens": 16 },
+  "priceSource": "response",
+  "display": { "card": "Other", "maker": null, "order": 90, "termsVersion": 1 },
+  "links": { "verified": false },
+  "sources": []
+}

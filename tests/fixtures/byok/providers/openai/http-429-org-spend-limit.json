@@ -1,0 +1,15 @@
+{
+  "status": 429,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "error": {
+      "message": "Organization spend limit exceeded.",
+      "type": "insufficient_quota",
+      "param": null,
+      "code": "organization_spend_limit_exceeded"
+    }
+  },
+  "source": "spend-limits guide [S29]"
+}

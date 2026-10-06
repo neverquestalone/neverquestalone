@@ -1,0 +1,151 @@
+{
+  "schema": 1,
+  "id": "xai",
+  "name": "xAI",
+  "order": 40,
+  "hidden": false,
+  "local": false,
+  "adapter": "openai-responses",
+  "altAdapter": "openai-chat",
+  "baseUrl": "https://api.x.ai/v1",
+  "hosts": ["api.x.ai"],
+  "auth": { "header": "authorization", "scheme": "Bearer" },
+  "headers": {},
+  "keyPattern": "^xai-[0-9A-Za-z_]{20,}$",
+  "keyRejectPattern": null,
+  "keyMatchOrder": 20,
+  "keyExample": "xai-…",
+  "requestIdHeader": "x-request-id",
+  "paths": { "chat": "/responses", "chatAlt": "/chat/completions", "models": "/models" },
+  "keyCheck": { "path": "/api-key", "blockedFields": ["api_key_blocked", "api_key_disabled", "team_blocked"] },
+  "models": {
+    "default": "grok-4.7",
+    "smarter": null,
+    "allowAny": false,
+    "list": [
+      { "id": "grok-4.7", "label": "Grok 4.7", "costRank": 2, "effort": true, "contextTokens": 500000,
+        "source": "xAI's model page (https://docs.x.ai/docs/models/grok-4.7, read 2026-09-30): reasoning efforts low, medium, high (default), xhigh, 500,000 context. Price, prompts under 200K (200K and up): $2 ($4) input, $0.50 ($1) cached input, $6 ($12) output." },
+      { "id": "grok-4.6", "label": "Grok 4.6", "costRank": 2, "effort": true, "contextTokens": 500000, "replacedBy": "grok-4.7",
+        "source": "xAI's model page (https://docs.x.ai/docs/models/grok-4.6, read 2026-09-30): reasoning efforts low, medium, high (default), xhigh, 500,000 context. Price, prompts under 200K (200K and up): $2 ($4) input, $0.50 ($1) cached input, $6 ($12) output." },
+      { "id": "grok-4.5", "label": "Grok 4.5", "costRank": 2, "effort": true, "contextTokens": 500000,
+        "source": "xAI's model page (https://docs.x.ai/docs/models/grok-4.5, read 2026-09-30): reasoning efforts low, medium, high (default), 500,000 context. Price, prompts under 200K (200K and up): $2 ($4) input, $0.30 ($0.60) cached input, $6 ($12) output. xhigh is listed, but the reasoning guide (https://docs.x.ai/docs/guides/reasoning) runs it as high before grok-4.6, so it isn't offered." },
+      { "id": "grok-4.3", "label": "Grok 4.3", "costRank": 1, "effort": true, "contextTokens": 1000000,
+        "source": "xAI's model page (https://docs.x.ai/docs/models/grok-4.3, read 2026-09-30): reasoning efforts none, low (default), medium, high, 1,000,000 context. Price, prompts under 200K (200K and up): $1.25 ($2.50) input, $0.20 ($0.40) cached input, $2.50 ($5) output. xhigh is listed, but runs as high before grok-4.6 (the reasoning guide), so it isn't offered." },
+      { "id": "grok-4.20-0309-reasoning", "label": "Grok 4.20 (always thinks)", "costRank": 1, "effort": false, "contextTokens": 1000000, "thinkRoom": 4096,
+        "source": "xAI's model page (https://docs.x.ai/docs/models/grok-4.20-0309-reasoning, read 2026-09-30): reasoning yes, no effort control (it always thinks: thinkRoom); aliases grok-4.20, grok-4.20-reasoning, 1,000,000 context. Price, prompts under 200K (200K and up): $1.25 ($2.50) input, $0.20 ($0.40) cached input, $2.50 ($5) output." },
+      { "id": "grok-4.20-0309-non-reasoning", "label": "Grok 4.20 (no thinking)", "costRank": 1, "effort": false, "contextTokens": 1000000,
+        "source": "xAI's model page (https://docs.x.ai/docs/models/grok-4.20-0309-non-reasoning, read 2026-09-30): reasoning no; alias grok-4.20-non-reasoning, 1,000,000 context. Price, prompts under 200K (200K and up): $1.25 ($2.50) input, $0.20 ($0.40) cached input, $2.50 ($5) output." }
+    ]
+  },
+  "effort": {
+    "grok-4.7": {
+      "low": { "reasoning": { "effort": "low" } },
+      "medium": { "reasoning": { "effort": "medium" } },
+      "high": { "reasoning": { "effort": "high" } },
+      "xhigh": { "reasoning": { "effort": "xhigh" } }
+    },
+    "grok-4.6": {
+      "low": { "reasoning": { "effort": "low" } },
+      "medium": { "reasoning": { "effort": "medium" } },
+      "high": { "reasoning": { "effort": "high" } },
+      "xhigh": { "reasoning": { "effort": "xhigh" } }
+    },
+    "grok-4.5": {
+      "low": { "reasoning": { "effort": "low" } },
+      "medium": { "reasoning": { "effort": "medium" } },
+      "high": { "reasoning": { "effort": "high" } }
+    },
+    "grok-4.3": {
+      "off": { "reasoning": { "effort": "none" } },
+      "low": { "reasoning": { "effort": "low" } },
+      "medium": { "reasoning": { "effort": "medium" } },
+      "high": { "reasoning": { "effort": "high" } }
+    }
+  },
+  "effortAlt": {
+    "grok-4.7": {
+      "low": { "reasoning_effort": "low" },
+      "medium": { "reasoning_effort": "medium" },
+      "high": { "reasoning_effort": "high" },
+      "xhigh": { "reasoning_effort": "xhigh" }
+    },
+    "grok-4.6": {
+      "low": { "reasoning_effort": "low" },
+      "medium": { "reasoning_effort": "medium" },
+      "high": { "reasoning_effort": "high" },
+      "xhigh": { "reasoning_effort": "xhigh" }
+    },
+    "grok-4.5": {
+      "low": { "reasoning_effort": "low" },
+      "medium": { "reasoning_effort": "medium" },
+      "high": { "reasoning_effort": "high" }
+    },
+    "grok-4.3": {
+      "off": { "reasoning_effort": "none" },
+      "low": { "reasoning_effort": "low" },
+      "medium": { "reasoning_effort": "medium" },
+      "high": { "reasoning_effort": "high" }
+    }
+  },
+  "defaultRequestOptionsAlt": {},
+  "altNotes": "The Chat Completions fallback (legacy) takes a top-level reasoning_effort, not the Responses API's reasoning.effort. store is a Responses parameter and isn't sent there until a live check shows the legacy endpoint accepts it; that endpoint's retention isn't documented separately. Both UNVERIFIED (B0.4).",
+  "rateLimitHeaders": null,
+  "errorMap": {
+    "codes": {},
+    "codeContains": { "spending-limit": "out_of_credit" },
+    "types": {},
+    "status": {},
+    "notes": "xAI documents 400, 401, 403, 404, 405, 415, 422 and 429 with no error schema. Out of credit was captured once as a 403 with code personal-team-blocked:spending-limit (third party); the docs only say 'rejected'. No rate-limit headers are documented."
+  },
+  "privacy": {
+    "class": "cloud-no-train",
+    "retention": "30 days, encrypted",
+    "trains": "No, without permission",
+    "zdr": "Self-serve, team-wide",
+    "sets": "store:false",
+    "notes": "The prepaid balance needs a separate management key (advanced, opt-in).",
+    "player": {
+      "short": "Keeps messages 30 days, encrypted; no training without your permission.",
+      "keeps": "Stored 30 days, encrypted, to check for abuse, then deleted.",
+      "trains": "Not without your permission.",
+      "zeroRetention": "A team-wide switch in the xAI console.",
+      "sets": "Asks xAI to keep nothing beyond its 30-day abuse check."
+    },
+    "sources": ["S59"]
+  },
+  "terms": {
+    "login": "API key only (DB6). Subscription login is partner-only.",
+    "notes": [
+      "A pre-generation usage-guideline violation costs $0.05 a request.",
+      "Responses with store:false; the Anthropic-style /v1/messages is fully deprecated."
+    ],
+    "playerNotes": [
+      "xAI charges $0.05 for each request it refuses under its usage rules."
+    ],
+    "sources": ["S52", "S58", "S60", "S61"]
+  },
+  "defaultRequestOptions": { "store": false },
+  "safetyIdentifier": false,
+  "limits": { "maxOutputTokens": 1200, "testMaxTokens": 16 },
+  "priceSource": "bundled",
+  "display": {
+    "card": "Grok",
+    "maker": "xAI",
+    "order": 30,
+    "termsVersion": 1,
+    "keyPrefix": "xai-",
+    "placeholder": "xai-…",
+    "openLink": "billing",
+    "stepLinks": { "step2": "keys" },
+    "fields": ["API keys", "Create API key", "Copy"]
+  },
+  "links": {
+    "keys": "https://console.x.ai/team/default/api-keys",
+    "billing": "https://console.x.ai/team/default/billing",
+    "limits": "https://console.x.ai/team/default/billing",
+    "privacy": "https://docs.x.ai/developers/faq/security",
+    "terms": "https://x.ai/legal/terms-of-service-enterprise",
+    "verified": false
+  },
+  "sources": ["S52", "S53", "S55", "S56", "S57", "S58", "S61"]
+}

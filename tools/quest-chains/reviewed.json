@@ -1,0 +1,5 @@
+{
+	"about": "What the rules in generate.mjs can't see in cmangos.json, each with its reason. \"instances\" names the area that names an instance when its map has none; \"quests\" sets a quest's dungeon (\"dungeon\": a map, or null for none) or leaves it out of every chain (\"skip\": true). generate.mjs refuses a review that only repeats the rules, and one for a quest cmangos.json no longer has.",
+	"instances": {},
+	"quests": {}
+}

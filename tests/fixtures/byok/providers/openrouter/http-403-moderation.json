@@ -1,0 +1,21 @@
+{
+  "status": 403,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "error": {
+      "code": 403,
+      "message": "Input was flagged",
+      "metadata": {
+        "reasons": [
+          "violence"
+        ],
+        "flagged_input": "first 100 characters of the player prompt would be echoed here…",
+        "provider_name": "OpenAI",
+        "model_slug": "openai/gpt-6-luna"
+      }
+    }
+  },
+  "source": "errors-and-debugging [S66]: moderation metadata quotes the prompt"
+}

@@ -164,9 +164,15 @@ Watch the network with [LuLu](https://objective-see.org/products/lulu.html) or L
 
 A security problem? Report it privately on the Security tab (Report a vulnerability), never in a public issue.
 
+## Build your own
+
+NeverQuestAlone’s code is open source under the MIT license: the desktop app, the addon, what the AI is told, and the game data and quest logic. This repository holds all of it, and each release’s tag holds the source that release was built from.
+
+To build it, run its tests or release your own, start at [neverquestalone.com/build](https://neverquestalone.com/build) or [Get started](docs/get-started.md). Forks rename the app, bring their own icons and sign it as themselves: the name NeverQuestAlone and its artwork aren’t part of the MIT license ([what it covers](CREDITS.md#what-the-mit-license-covers)).
+
 ## Credits and license
 
-NeverQuestAlone is built on [wow-ai](https://github.com/chelinho139/wow-ai) by chelinho139, with thanks to [0xInuarashi’s wow-forever-codex](https://github.com/0xinuarashi/wow-forever-codex). The addon’s code is in its download, under the [MIT license](LICENSE). The app’s source isn’t public yet; this repository holds the docs and releases. [Credits](CREDITS.md)
+NeverQuestAlone is built on [wow-ai](https://github.com/chelinho139/wow-ai) by chelinho139, with thanks to [0xInuarashi’s wow-forever-codex](https://github.com/0xinuarashi/wow-forever-codex). All of its source is here, under the [MIT license](LICENSE): see [Build your own](#build-your-own). [Credits](CREDITS.md)
 
 ---
 

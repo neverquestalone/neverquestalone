@@ -1,0 +1,16 @@
+{
+  "status": 429,
+  "headers": {
+    "content-type": "application/json",
+    "retry-after-ms": "1500"
+  },
+  "body": {
+    "error": {
+      "message": "Please slow down.",
+      "type": "rate_limit_error",
+      "param": null,
+      "code": "slow_down"
+    }
+  },
+  "source": "error-codes guide [S29]"
+}

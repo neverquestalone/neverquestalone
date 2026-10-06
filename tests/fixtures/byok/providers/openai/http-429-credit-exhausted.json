@@ -1,0 +1,15 @@
+{
+  "status": 429,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "error": {
+      "message": "Your credit balance is exhausted.",
+      "type": "insufficient_quota",
+      "param": null,
+      "code": "credit_balance_exhausted"
+    }
+  },
+  "source": "error-codes guide [S29]"
+}

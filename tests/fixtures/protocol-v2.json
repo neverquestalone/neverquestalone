@@ -1,0 +1,386 @@
+{
+  "about": "Shared NeverQuestAlone protocol v2 vectors (docs/PROTOCOL.md §6). Bridge JS tests and addon Lua tests both read this file.",
+  "separators": {
+    "RS": "\\u001e",
+    "US": "\\u001f",
+    "GS": "\\u001d"
+  },
+  "records": [
+    {
+      "name": "hello with context",
+      "wire": "2\u001f3fa9c2d1\u001fa3f1\u001fhello\u001f\u001fcur=0;ver=1.4.8;build=70009;iface=16001;n=0;ctx=1;sig=ok;slots=200;sid=3fa9c2d1e07b4c55\u001fGame: World of Warcraft: Forever (client 1.60.1.70009, interface 16001)\nCharacter: Tavi on Testrealm, level 6 Tauren Warrior (Horde)\nLocation: Mulgore - Red Cloud Mesa\nPosition: 44.1, 76.3 on Mulgore (map 1412)",
+      "parsed": {
+        "v": 2,
+        "token": "3fa9c2d1",
+        "key": "a3f1",
+        "nonce": "a3f1",
+        "n": null,
+        "type": "hello",
+        "chat": "",
+        "args": {
+          "cur": "0",
+          "ver": "1.4.8",
+          "build": "70009",
+          "iface": "16001",
+          "n": "0",
+          "ctx": "1",
+          "sig": "ok",
+          "slots": "200",
+          "sid": "3fa9c2d1e07b4c55"
+        },
+        "body": "Game: World of Warcraft: Forever (client 1.60.1.70009, interface 16001)\nCharacter: Tavi on Testrealm, level 6 Tauren Warrior (Horde)\nLocation: Mulgore - Red Cloud Mesa\nPosition: 44.1, 76.3 on Mulgore (map 1412)"
+      }
+    },
+    {
+      "name": "msg with context",
+      "wire": "2\u001f3fa9c2d1\u001fa3f1_1\u001fmsg\u001fc3f9a1e\u001fcur=0;agent=main;name=Hyjal route;ctx=1;q=followup\u001fGame: World of Warcraft: Forever (client 1.60.1.70009, interface 16001)\nCharacter: Tavi on Testrealm, level 6 Tauren Warrior (Horde)\nLocation: Mulgore - Red Cloud Mesa\nPosition: 44.1, 76.3 on Mulgore (map 1412)\u001dfastest way to Hyjal from here?",
+      "parsed": {
+        "v": 2,
+        "token": "3fa9c2d1",
+        "key": "a3f1_1",
+        "nonce": "a3f1",
+        "n": 1,
+        "type": "msg",
+        "chat": "c3f9a1e",
+        "args": {
+          "cur": "0",
+          "agent": "main",
+          "name": "Hyjal route",
+          "ctx": "1",
+          "q": "followup"
+        },
+        "body": "Game: World of Warcraft: Forever (client 1.60.1.70009, interface 16001)\nCharacter: Tavi on Testrealm, level 6 Tauren Warrior (Horde)\nLocation: Mulgore - Red Cloud Mesa\nPosition: 44.1, 76.3 on Mulgore (map 1412)\u001dfastest way to Hyjal from here?",
+        "context": "Game: World of Warcraft: Forever (client 1.60.1.70009, interface 16001)\nCharacter: Tavi on Testrealm, level 6 Tauren Warrior (Horde)\nLocation: Mulgore - Red Cloud Mesa\nPosition: 44.1, 76.3 on Mulgore (map 1412)",
+        "text": "fastest way to Hyjal from here?"
+      }
+    },
+    {
+      "name": "msg without context, separators and a leading slash in the text",
+      "wire": "2\u001f3fa9c2d1\u001fa3f1_2\u001fmsg\u001fc3f9a1e\u001fcur=3;agent=main;name=50%25 off%3B a%3Db;ctx=0;q=followup\u001f/exec rm -rf ~ ; a=b \u001f still text",
+      "parsed": {
+        "v": 2,
+        "token": "3fa9c2d1",
+        "key": "a3f1_2",
+        "nonce": "a3f1",
+        "n": 2,
+        "type": "msg",
+        "chat": "c3f9a1e",
+        "args": {
+          "cur": "3",
+          "agent": "main",
+          "name": "50% off; a=b",
+          "ctx": "0",
+          "q": "followup"
+        },
+        "body": "/exec rm -rf ~ ; a=b \u001f still text",
+        "context": null,
+        "text": "/exec rm -rf ~ ; a=b \u001f still text"
+      }
+    },
+    {
+      "name": "stop",
+      "wire": "2\u001f3fa9c2d1\u001fa3f1_3\u001fstop\u001fc3f9a1e\u001fcur=5\u001f",
+      "parsed": {
+        "v": 2,
+        "token": "3fa9c2d1",
+        "key": "a3f1_3",
+        "nonce": "a3f1",
+        "n": 3,
+        "type": "stop",
+        "chat": "c3f9a1e",
+        "args": {
+          "cur": "5"
+        },
+        "body": ""
+      }
+    },
+    {
+      "name": "patch label",
+      "wire": "2\u001f3fa9c2d1\u001fa3f1_4\u001fpatch\u001fc3f9a1e\u001fcur=5;label=Hyjal & back\u001f",
+      "parsed": {
+        "v": 2,
+        "token": "3fa9c2d1",
+        "key": "a3f1_4",
+        "nonce": "a3f1",
+        "n": 4,
+        "type": "patch",
+        "chat": "c3f9a1e",
+        "args": {
+          "cur": "5",
+          "label": "Hyjal & back"
+        },
+        "body": ""
+      }
+    },
+    {
+      "name": "forget",
+      "wire": "2\u001f3fa9c2d1\u001fa3f1_5\u001fforget\u001fc3f9a1e\u001fcur=5\u001f",
+      "parsed": {
+        "v": 2,
+        "token": "3fa9c2d1",
+        "key": "a3f1_5",
+        "nonce": "a3f1",
+        "n": 5,
+        "type": "forget",
+        "chat": "c3f9a1e",
+        "args": {
+          "cur": "5"
+        },
+        "body": ""
+      }
+    },
+    {
+      "name": "seen",
+      "wire": "2\u001f3fa9c2d1\u001fb7e2\u001fseen\u001f\u001fcur=12\u001f",
+      "parsed": {
+        "v": 2,
+        "token": "3fa9c2d1",
+        "key": "b7e2",
+        "nonce": "b7e2",
+        "n": null,
+        "type": "seen",
+        "chat": "",
+        "args": {
+          "cur": "12"
+        },
+        "body": ""
+      }
+    },
+    {
+      "name": "seen with push counter",
+      "wire": "2\u001f3fa9c2d1\u001fb7e2\u001fseen\u001f\u001fcur=12;p=7\u001f",
+      "parsed": {
+        "v": 2,
+        "token": "3fa9c2d1",
+        "key": "b7e2",
+        "nonce": "b7e2",
+        "n": null,
+        "type": "seen",
+        "chat": "",
+        "args": {
+          "cur": "12",
+          "p": "7"
+        },
+        "body": ""
+      }
+    },
+    {
+      "name": "state (the game state the companion reads)",
+      "wire": "2\u001f3fa9c2d1\u001fb7e2\u001fstate\u001f\u001fcur=12;sid=3fa9c2d1e07b4c55;seq=42\u001f{\"v\":1,\"sid\":\"3fa9c2d1e07b4c55\",\"seq\":42,\"t\":1790000000,\"char\":{\"name\":\"Tavi\",\"realm\":\"Lantern Moor PvE 3\",\"class\":\"SHAMAN\",\"race\":\"Tauren\",\"level\":7,\"xp\":40,\"xpMax\":4500,\"money\":11800},\"loc\":{\"map\":1412,\"zone\":\"Mulgore\",\"sub\":\"Bloodhoof Village\",\"x\":49.6,\"y\":66.3},\"quests\":[{\"id\":748,\"title\":\"Poison Water\",\"level\":5,\"trivial\":false,\"complete\":false,\"obj\":[{\"text\":\"Prairie Wolf Paw\",\"have\":3,\"need\":6},{\"text\":\"Plainstrider Talon\",\"have\":6,\"need\":6}]},{\"id\":761,\"title\":\"Swoop Hunting\",\"level\":8,\"trivial\":false,\"complete\":false,\"obj\":[{\"text\":\"Trophy Swoop Quill\",\"have\":2,\"need\":8}]}],\"prof\":[{\"name\":\"Mining\",\"rank\":8,\"max\":75}],\"pending\":[{\"kind\":\"zone\",\"zone\":\"Thunder Bluff\",\"t\":1790000100}],\"omitted\":[]}",
+      "parsed": {
+        "v": 2,
+        "token": "3fa9c2d1",
+        "key": "b7e2",
+        "nonce": "b7e2",
+        "n": null,
+        "type": "state",
+        "chat": "",
+        "args": {
+          "cur": "12",
+          "sid": "3fa9c2d1e07b4c55",
+          "seq": "42"
+        },
+        "body": "{\"v\":1,\"sid\":\"3fa9c2d1e07b4c55\",\"seq\":42,\"t\":1790000000,\"char\":{\"name\":\"Tavi\",\"realm\":\"Lantern Moor PvE 3\",\"class\":\"SHAMAN\",\"race\":\"Tauren\",\"level\":7,\"xp\":40,\"xpMax\":4500,\"money\":11800},\"loc\":{\"map\":1412,\"zone\":\"Mulgore\",\"sub\":\"Bloodhoof Village\",\"x\":49.6,\"y\":66.3},\"quests\":[{\"id\":748,\"title\":\"Poison Water\",\"level\":5,\"trivial\":false,\"complete\":false,\"obj\":[{\"text\":\"Prairie Wolf Paw\",\"have\":3,\"need\":6},{\"text\":\"Plainstrider Talon\",\"have\":6,\"need\":6}]},{\"id\":761,\"title\":\"Swoop Hunting\",\"level\":8,\"trivial\":false,\"complete\":false,\"obj\":[{\"text\":\"Trophy Swoop Quill\",\"have\":2,\"need\":8}]}],\"prof\":[{\"name\":\"Mining\",\"rank\":8,\"max\":75}],\"pending\":[{\"kind\":\"zone\",\"zone\":\"Thunder Bluff\",\"t\":1790000100}],\"omitted\":[]}"
+      }
+    },
+    {
+      "name": "state deflated (cap z): the same JSON, raw deflate in base64, z=1",
+      "wire": "2\u001f3fa9c2d1\u001fb7e2\u001fstate\u001f\u001fcur=12;sid=3fa9c2d1e07b4c55;seq=42;z=1\u001flVLBbqMwEP0Vy2cUQRIg4ZZKlXpYVlk12h6qHCYwBDfGQ42h6Ub59x2TNux1ueDxvHnvjWcucpBZFMhOlTKTiwrWxbyMMEwPyyKOJSfwXWbLeSAd49J1ePsCWdRgZXaRBhrkyh0MitEWQTcc/gDj0BqRE1mxHR7FgpOFhq7j5PPTJt/89GgobrW9RcOxxgG1zNJAnlsWDf0/hzMfYy/ZkMFPdhGtwvDKaCq8gQYYGy0jtviHAcyX9/pIFr35/sDxgyYqa6JK/FZaw9FnPOl6lgSSCZNktmC+9x47x/5eL9I/RrpccdPKaU+5JdWRES/AXU1GYwZYNSjgcwW6Q+6Rmlajw/sFHd5GSodn54ksKKtQvJCuxBY+mKyGgeGLQBpE1k2uwYTWoEzHGiVasQNN5o5PJvzeV4yWk2iy/PxB1Iqn3jhljpPn1f973llq609xI/zV8xveXcy/XazYxT6QraVqLP1ai1yZm7oFcxrFGz/PNB7BaEqf9fiTMn4BxwneB7mre+M7f9B9Vcl/VzDiDWAGapRzXv51f/0L",
+      "parsed": {
+        "v": 2,
+        "token": "3fa9c2d1",
+        "key": "b7e2",
+        "nonce": "b7e2",
+        "n": null,
+        "type": "state",
+        "chat": "",
+        "args": {
+          "cur": "12",
+          "sid": "3fa9c2d1e07b4c55",
+          "seq": "42",
+          "z": "1"
+        },
+        "body": "lVLBbqMwEP0Vy2cUQRIg4ZZKlXpYVlk12h6qHCYwBDfGQ42h6Ub59x2TNux1ueDxvHnvjWcucpBZFMhOlTKTiwrWxbyMMEwPyyKOJSfwXWbLeSAd49J1ePsCWdRgZXaRBhrkyh0MitEWQTcc/gDj0BqRE1mxHR7FgpOFhq7j5PPTJt/89GgobrW9RcOxxgG1zNJAnlsWDf0/hzMfYy/ZkMFPdhGtwvDKaCq8gQYYGy0jtviHAcyX9/pIFr35/sDxgyYqa6JK/FZaw9FnPOl6lgSSCZNktmC+9x47x/5eL9I/RrpccdPKaU+5JdWRES/AXU1GYwZYNSjgcwW6Q+6Rmlajw/sFHd5GSodn54ksKKtQvJCuxBY+mKyGgeGLQBpE1k2uwYTWoEzHGiVasQNN5o5PJvzeV4yWk2iy/PxB1Iqn3jhljpPn1f973llq609xI/zV8xveXcy/XazYxT6QraVqLP1ai1yZm7oFcxrFGz/PNB7BaEqf9fiTMn4BxwneB7mre+M7f9B9Vcl/VzDiDWAGapRzXv51f/0L"
+      },
+      "json": "{\"v\":1,\"sid\":\"3fa9c2d1e07b4c55\",\"seq\":42,\"t\":1790000000,\"char\":{\"name\":\"Tavi\",\"realm\":\"Lantern Moor PvE 3\",\"class\":\"SHAMAN\",\"race\":\"Tauren\",\"level\":7,\"xp\":40,\"xpMax\":4500,\"money\":11800},\"loc\":{\"map\":1412,\"zone\":\"Mulgore\",\"sub\":\"Bloodhoof Village\",\"x\":49.6,\"y\":66.3},\"quests\":[{\"id\":748,\"title\":\"Poison Water\",\"level\":5,\"trivial\":false,\"complete\":false,\"obj\":[{\"text\":\"Prairie Wolf Paw\",\"have\":3,\"need\":6},{\"text\":\"Plainstrider Talon\",\"have\":6,\"need\":6}]},{\"id\":761,\"title\":\"Swoop Hunting\",\"level\":8,\"trivial\":false,\"complete\":false,\"obj\":[{\"text\":\"Trophy Swoop Quill\",\"have\":2,\"need\":8}]}],\"prof\":[{\"name\":\"Mining\",\"rank\":8,\"max\":75}],\"pending\":[{\"kind\":\"zone\",\"zone\":\"Thunder Bluff\",\"t\":1790000100}],\"omitted\":[]}"
+    },
+    {
+      "name": "evt (a game event for the companion; empty body)",
+      "wire": "2\u001f3fa9c2d1\u001fa3f1_9\u001fevt\u001fc0ffee0\u001fcur=4;kind=level_up;agent=main;name=Companion;from=6;to=7;sid=3fa9c2d1e07b4c55;st=42\u001f",
+      "parsed": {
+        "v": 2,
+        "token": "3fa9c2d1",
+        "key": "a3f1_9",
+        "nonce": "a3f1",
+        "n": 9,
+        "type": "evt",
+        "chat": "c0ffee0",
+        "args": {
+          "cur": "4",
+          "kind": "level_up",
+          "agent": "main",
+          "name": "Companion",
+          "from": "6",
+          "to": "7",
+          "sid": "3fa9c2d1e07b4c55",
+          "st": "42"
+        },
+        "body": ""
+      }
+    },
+    {
+      "name": "msg with st (the state it goes with)",
+      "wire": "2\u001f3fa9c2d1\u001fa3f1_10\u001fmsg\u001fc3f9a1e\u001fcur=4;agent=main;name=Hyjal route;ctx=0;q=followup;st=42\u001fwhat should I do next?",
+      "parsed": {
+        "v": 2,
+        "token": "3fa9c2d1",
+        "key": "a3f1_10",
+        "nonce": "a3f1",
+        "n": 10,
+        "type": "msg",
+        "chat": "c3f9a1e",
+        "args": {
+          "cur": "4",
+          "agent": "main",
+          "name": "Hyjal route",
+          "ctx": "0",
+          "q": "followup",
+          "st": "42"
+        },
+        "body": "what should I do next?",
+        "context": null,
+        "text": "what should I do next?"
+      }
+    }
+  ],
+  "payload": {
+    "wire": "2\u001f3fa9c2d1\u001fa3f1_3\u001fstop\u001fc3f9a1e\u001fcur=5\u001f\u001e2\u001f3fa9c2d1\u001fa3f1_1\u001fmsg\u001fc3f9a1e\u001fcur=0;agent=main;name=Hyjal route;ctx=1;q=followup\u001fGame: World of Warcraft: Forever (client 1.60.1.70009, interface 16001)\nCharacter: Tavi on Testrealm, level 6 Tauren Warrior (Horde)\nLocation: Mulgore - Red Cloud Mesa\nPosition: 44.1, 76.3 on Mulgore (map 1412)\u001dfastest way to Hyjal from here?",
+    "keys": [
+      "a3f1_3",
+      "a3f1_1"
+    ]
+  },
+  "invalid": [
+    {
+      "name": "version 1 record (upstream)",
+      "wire": "3fa9c2d1\u001fc3f9a1e\u001f7\u001f\u001fh\u001fChat 1\u001f"
+    },
+    {
+      "name": "bad token",
+      "wire": "2\u001fXYZ\u001fa3f1_1\u001fmsg\u001fc3f9a1e\u001fcur=0\u001fhi"
+    },
+    {
+      "name": "bad key",
+      "wire": "2\u001f3fa9c2d1\u001fa3f1-1\u001fmsg\u001fc3f9a1e\u001fcur=0\u001fhi"
+    },
+    {
+      "name": "bad chat",
+      "wire": "2\u001f3fa9c2d1\u001fa3f1_1\u001fmsg\u001fchat1\u001fcur=0\u001fhi"
+    },
+    {
+      "name": "unknown type",
+      "wire": "2\u001f3fa9c2d1\u001fa3f1_1\u001fdance\u001fc3f9a1e\u001fcur=0\u001f"
+    },
+    {
+      "name": "missing cur",
+      "wire": "2\u001f3fa9c2d1\u001fa3f1_1\u001fmsg\u001fc3f9a1e\u001fagent=main\u001fhi"
+    },
+    {
+      "name": "state with a send key",
+      "wire": "2\u001f3fa9c2d1\u001fa3f1_1\u001fstate\u001f\u001fcur=0;sid=3fa9c2d1e07b4c55;seq=1\u001f{}"
+    },
+    {
+      "name": "state with a chat",
+      "wire": "2\u001f3fa9c2d1\u001fa3f1\u001fstate\u001fc0ffee0\u001fcur=0;sid=3fa9c2d1e07b4c55;seq=1\u001f{}"
+    }
+  ],
+  "slot": {
+    "v": 2,
+    "ts": "2026-09-25T18:04:00Z",
+    "now": 1790359440,
+    "token": "3fa9c2d1",
+    "bridge": {
+      "ver": "1.1.0",
+      "push": 137,
+      "nonce": "a3f1",
+      "acked": [
+        "a3f1_1",
+        "a3f1_2"
+      ],
+      "caps": [
+        "state",
+        "evt"
+      ],
+      "stateSeq": 42,
+      "stateSid": "3fa9c2d1e07b4c55"
+    },
+    "gw": {
+      "state": "ready",
+      "since": 1790359000,
+      "ver": "byok-1",
+      "queued": 0
+    },
+    "agents": [
+      {
+        "id": "main",
+        "name": "NeverQuestAlone"
+      }
+    ],
+    "chats": [
+      {
+        "id": "c3f9a1e",
+        "agent": "main",
+        "label": "Hyjal route",
+        "busy": true,
+        "queued": 0,
+        "run": {
+          "started": 1790359380,
+          "actions": 7,
+          "last": "A title with \"quotes\" | a pipe"
+        }
+      }
+    ],
+    "records": [
+      {
+        "seq": 512,
+        "t": "reply",
+        "chat": "c3f9a1e",
+        "mid": "byok:c3f9a1e:1790359430",
+        "agent": "main",
+        "text": "Take the ||cff00ff00 flight path||r at Thunder Bluff.\nLine two with \"quotes\", a backslash \\ and a tab\t.",
+        "summary": "Fly from Thunder Bluff.",
+        "more": 0
+      },
+      {
+        "seq": 513,
+        "t": "error",
+        "chat": "c3f9a1e",
+        "kind": "stop",
+        "text": "Nothing was running."
+      },
+      {
+        "seq": 514,
+        "t": "reply",
+        "chat": "c3f9a1e",
+        "mid": "byok:c3f9a1e:1790359431",
+        "agent": "main",
+        "text": "replayed",
+        "summary": "",
+        "more": 0,
+        "replay": 1
+      }
+    ]
+  },
+  "worstState": {
+    "about": "The worst case (companion PRD §6): 30 quests with 6 objectives each and multibyte names past 60 bytes, 30 quest points, 19 items of gear, 10 milestones, for a bridge with caps z and qlog. The addon keeps every quest and 5 objectives each, cuts strings to 60 bytes on a character, and leaves out detail in the fit's order until the deflated body fits 3,100 bytes and the JSON 12,000. \"t\" is 0 here.",
+    "json": "{\"v\":1,\"sid\":\"a1b2c3d4e5f60718\",\"seq\":1,\"t\":0,\"char\":{\"name\":\"Tavi\",\"realm\":\"Testrealm\",\"class\":\"SHAMAN\",\"race\":\"Tauren\",\"level\":7,\"xp\":300,\"xpMax\":1400,\"money\":11800},\"loc\":{\"map\":1412,\"zone\":\"Mulgore\",\"sub\":\"Bloodhoof Village\",\"x\":49.6,\"y\":66.3},\"questCount\":30,\"questMax\":40,\"quests\":[{\"id\":1001,\"title\":\"Die unerträglich lange Questreihe Ñandú Ωmega Teil 1\",\"level\":11,\"trivial\":false,\"complete\":false,\"obj\":[{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9}]},{\"id\":1002,\"title\":\"Die unerträglich lange Questreihe Ñandú Ωmega Teil 2\",\"level\":12,\"trivial\":false,\"complete\":false,\"obj\":[{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9}]},{\"id\":1003,\"title\":\"Die unerträglich lange Questreihe Ñandú Ωmega Teil 3\",\"level\":13,\"trivial\":false,\"complete\":false,\"obj\":[{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9}]},{\"id\":1004,\"title\":\"Die unerträglich lange Questreihe Ñandú Ωmega Teil 4\",\"level\":14,\"trivial\":true,\"complete\":false,\"obj\":[{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9}]},{\"id\":1005,\"title\":\"Die unerträglich lange Questreihe Ñandú Ωmega Teil 5\",\"level\":10,\"trivial\":false,\"complete\":false,\"obj\":[{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9}]},{\"id\":1006,\"title\":\"Die unerträglich lange Questreihe Ñandú Ωmega Teil 6\",\"level\":11,\"trivial\":false,\"complete\":false,\"obj\":[{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9}]},{\"id\":1007,\"title\":\"Die unerträglich lange Questreihe Ñandú Ωmega Teil 7\",\"level\":12,\"trivial\":false,\"complete\":true},{\"id\":1008,\"title\":\"Die unerträglich lange Questreihe Ñandú Ωmega Teil 8\",\"level\":13,\"trivial\":true,\"complete\":false,\"obj\":[{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9}]},{\"id\":1009,\"title\":\"Die unerträglich lange Questreihe Ñandú Ωmega Teil 9\",\"level\":14,\"trivial\":false,\"complete\":false,\"obj\":[{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9}]},{\"id\":1010,\"title\":\"Die unerträglich lange Questreihe Ñandú Ωmega Teil 10\",\"level\":10,\"trivial\":false,\"complete\":false,\"obj\":[{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9}]},{\"id\":1011,\"title\":\"Die unerträglich lange Questreihe Ñandú Ωmega Teil 11\",\"level\":11,\"trivial\":false,\"complete\":false,\"obj\":[{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9}]},{\"id\":1012,\"title\":\"Die unerträglich lange Questreihe Ñandú Ωmega Teil 12\",\"level\":12,\"trivial\":true,\"complete\":false,\"obj\":[{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9}]},{\"id\":1013,\"title\":\"Die unerträglich lange Questreihe Ñandú Ωmega Teil 13\",\"level\":13,\"trivial\":false,\"complete\":false,\"obj\":[{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9}]},{\"id\":1014,\"title\":\"Die unerträglich lange Questreihe Ñandú Ωmega Teil 14\",\"level\":14,\"trivial\":false,\"complete\":true},{\"id\":1015,\"title\":\"Die unerträglich lange Questreihe Ñandú Ωmega Teil 15\",\"level\":10,\"trivial\":false,\"complete\":false,\"obj\":[{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9}]},{\"id\":1016,\"title\":\"Die unerträglich lange Questreihe Ñandú Ωmega Teil 16\",\"level\":11,\"trivial\":true,\"complete\":false,\"obj\":[{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9}]},{\"id\":1017,\"title\":\"Die unerträglich lange Questreihe Ñandú Ωmega Teil 17\",\"level\":12,\"trivial\":false,\"complete\":false,\"obj\":[{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9}]},{\"id\":1018,\"title\":\"Die unerträglich lange Questreihe Ñandú Ωmega Teil 18\",\"level\":13,\"trivial\":false,\"complete\":false,\"obj\":[{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9}]},{\"id\":1019,\"title\":\"Die unerträglich lange Questreihe Ñandú Ωmega Teil 19\",\"level\":14,\"trivial\":false,\"complete\":false,\"obj\":[{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9}]},{\"id\":1020,\"title\":\"Die unerträglich lange Questreihe Ñandú Ωmega Teil 20\",\"level\":10,\"trivial\":true,\"complete\":false,\"obj\":[{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9}]},{\"id\":1021,\"title\":\"Die unerträglich lange Questreihe Ñandú Ωmega Teil 21\",\"level\":11,\"trivial\":false,\"complete\":true},{\"id\":1022,\"title\":\"Die unerträglich lange Questreihe Ñandú Ωmega Teil 22\",\"level\":12,\"trivial\":false,\"complete\":false,\"obj\":[{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9}]},{\"id\":1023,\"title\":\"Die unerträglich lange Questreihe Ñandú Ωmega Teil 23\",\"level\":13,\"trivial\":false,\"complete\":false,\"obj\":[{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9}]},{\"id\":1024,\"title\":\"Die unerträglich lange Questreihe Ñandú Ωmega Teil 24\",\"level\":14,\"trivial\":true,\"complete\":false,\"obj\":[{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9}]},{\"id\":1025,\"title\":\"Die unerträglich lange Questreihe Ñandú Ωmega Teil 25\",\"level\":10,\"trivial\":false,\"complete\":false,\"obj\":[{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9}]},{\"id\":1026,\"title\":\"Die unerträglich lange Questreihe Ñandú Ωmega Teil 26\",\"level\":11,\"trivial\":false,\"complete\":false,\"obj\":[{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9}]},{\"id\":1027,\"title\":\"Die unerträglich lange Questreihe Ñandú Ωmega Teil 27\",\"level\":12,\"trivial\":false,\"complete\":false,\"obj\":[{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9}]},{\"id\":1028,\"title\":\"Die unerträglich lange Questreihe Ñandú Ωmega Teil 28\",\"level\":13,\"trivial\":true,\"complete\":true},{\"id\":1029,\"title\":\"Die unerträglich lange Questreihe Ñandú Ωmega Teil 29\",\"level\":14,\"trivial\":false,\"complete\":false,\"obj\":[{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9}]},{\"id\":1030,\"title\":\"Die unerträglich lange Questreihe Ñandú Ωmega Teil 30\",\"level\":10,\"trivial\":false,\"complete\":false,\"obj\":[{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9},{\"have\":1,\"need\":9}]}],\"prof\":[{\"name\":\"Skinning\",\"rank\":75,\"max\":75},{\"name\":\"First Aid\",\"rank\":40,\"max\":75}],\"pending\":[{\"kind\":\"zone\",\"zone\":\"Zone 1 of the Ünbekannte Länder\",\"t\":1700000000},{\"kind\":\"zone\",\"zone\":\"Zone 2 of the Ünbekannte Länder\",\"t\":1700000000},{\"kind\":\"zone\",\"zone\":\"Zone 3 of the Ünbekannte Länder\",\"t\":1700000000},{\"kind\":\"zone\",\"zone\":\"Zone 4 of the Ünbekannte Länder\",\"t\":1700000000},{\"kind\":\"zone\",\"zone\":\"Zone 5 of the Ünbekannte Länder\",\"t\":1700000000},{\"kind\":\"zone\",\"zone\":\"Zone 6 of the Ünbekannte Länder\",\"t\":1700000000},{\"kind\":\"zone\",\"zone\":\"Zone 7 of the Ünbekannte Länder\",\"t\":1700000000},{\"kind\":\"zone\",\"zone\":\"Zone 8 of the Ünbekannte Länder\",\"t\":1700000000},{\"kind\":\"zone\",\"zone\":\"Zone 9 of the Ünbekannte Länder\",\"t\":1700000000},{\"kind\":\"zone\",\"zone\":\"Zone 10 of the Ünbekannte Länder\",\"t\":1700000000}],\"omitted\":[\"gear\",\"poi\",\"quests.obj.done\",\"quests.obj.text\"]}"
+  },
+  "legacyWorstState": {
+    "about": "The same worst case for a bridge without cap qlog: every quest, with detail, then professions and milestones (they wait for the next state), then the end of titles, titles last, left out until the JSON fits 2,800 bytes. \"t\" is 0 here.",
+    "json": "{\"v\":1,\"sid\":\"a1b2c3d4e5f60718\",\"seq\":1,\"t\":0,\"char\":{\"name\":\"Tavi\",\"realm\":\"Testrealm\",\"class\":\"SHAMAN\",\"race\":\"Tauren\",\"level\":7,\"xp\":300,\"xpMax\":1400,\"money\":11800},\"loc\":{\"map\":1412,\"zone\":\"Mulgore\",\"sub\":\"Bloodhoof Village\",\"x\":49.6,\"y\":66.3},\"questCount\":30,\"questMax\":40,\"quests\":[{\"id\":1001,\"title\":\"Die unerträglich lange \",\"cut\":true,\"complete\":false},{\"id\":1002,\"title\":\"Die unerträglich lange \",\"cut\":true,\"complete\":false},{\"id\":1003,\"title\":\"Die unerträglich lange \",\"cut\":true,\"complete\":false},{\"id\":1004,\"title\":\"Die unerträglich lange \",\"cut\":true,\"complete\":false},{\"id\":1005,\"title\":\"Die unerträglich lange \",\"cut\":true,\"complete\":false},{\"id\":1006,\"title\":\"Die unerträglich lange \",\"cut\":true,\"complete\":false},{\"id\":1007,\"title\":\"Die unerträglich lange \",\"cut\":true,\"complete\":true},{\"id\":1008,\"title\":\"Die unerträglich lange \",\"cut\":true,\"complete\":false},{\"id\":1009,\"title\":\"Die unerträglich lange \",\"cut\":true,\"complete\":false},{\"id\":1010,\"title\":\"Die unerträglich lange \",\"cut\":true,\"complete\":false},{\"id\":1011,\"title\":\"Die unerträglich lange \",\"cut\":true,\"complete\":false},{\"id\":1012,\"title\":\"Die unerträglich lange \",\"cut\":true,\"complete\":false},{\"id\":1013,\"title\":\"Die unerträglich lange \",\"cut\":true,\"complete\":false},{\"id\":1014,\"title\":\"Die unerträglich lange \",\"cut\":true,\"complete\":true},{\"id\":1015,\"title\":\"Die unerträglich lange \",\"cut\":true,\"complete\":false},{\"id\":1016,\"title\":\"Die unerträglich lange \",\"cut\":true,\"complete\":false},{\"id\":1017,\"title\":\"Die unerträglich lange \",\"cut\":true,\"complete\":false},{\"id\":1018,\"title\":\"Die unerträglich lange \",\"cut\":true,\"complete\":false},{\"id\":1019,\"title\":\"Die unerträglich lange \",\"cut\":true,\"complete\":false},{\"id\":1020,\"title\":\"Die unerträglich lange \",\"cut\":true,\"complete\":false},{\"id\":1021,\"title\":\"Die unerträglich lange \",\"cut\":true,\"complete\":true},{\"id\":1022,\"title\":\"Die unerträglich lange \",\"cut\":true,\"complete\":false},{\"id\":1023,\"title\":\"Die unerträglich lange \",\"cut\":true,\"complete\":false},{\"id\":1024,\"title\":\"Die unerträglich lange \",\"cut\":true,\"complete\":false},{\"id\":1025,\"title\":\"Die unerträglich lange \",\"cut\":true,\"complete\":false},{\"id\":1026,\"title\":\"Die unerträglich lange \",\"cut\":true,\"complete\":false},{\"id\":1027,\"title\":\"Die unerträglich lange \",\"cut\":true,\"complete\":false},{\"id\":1028,\"title\":\"Die unerträglich lange \",\"cut\":true,\"complete\":true},{\"id\":1029,\"title\":\"Die unerträglich lange \",\"cut\":true,\"complete\":false},{\"id\":1030,\"title\":\"Die unerträglich lange \",\"cut\":true,\"complete\":false}],\"omitted\":[\"gear\",\"poi\",\"quests.obj.done\",\"quests.obj.text\",\"quests.obj\",\"quests.level\",\"prof\",\"pending\",\"quests.title.short\"]}"
+  },
+  "fullLogState": {
+    "about": "A full quest log at Forever's cap (tests/helpers/quest-log.mjs fullLog): 40 quests under 15 zone headers and a hidden quest; the last header is Shaman and the last quest 1527 Call of Fire, ready to turn in. For a bridge with caps z and qlog: every quest with its whole title and objective texts; the objectives of quests ready to turn in left out. \"t\" is 0 here.",
+    "json": "{\"v\":1,\"sid\":\"a1b2c3d4e5f60718\",\"seq\":1,\"t\":0,\"char\":{\"name\":\"Tavi\",\"realm\":\"Testrealm\",\"class\":\"SHAMAN\",\"race\":\"Tauren\",\"level\":20,\"xp\":300,\"xpMax\":1400,\"money\":11800},\"loc\":{\"map\":1412,\"zone\":\"Mulgore\",\"sub\":\"Bloodhoof Village\",\"x\":45.2,\"y\":67.8},\"questCount\":40,\"questMax\":40,\"quests\":[{\"id\":1488,\"title\":\"Errands along the roads of Mulgore, part 0 again again\",\"level\":5,\"trivial\":true,\"complete\":false,\"obj\":[{\"text\":\"Collected thing 1 for quest 0\",\"have\":0,\"need\":6}]},{\"id\":1489,\"title\":\"Errands along the roads of Mulgore, part 1 again again\",\"level\":6,\"trivial\":false,\"complete\":true},{\"id\":1490,\"title\":\"Errands along the roads of Mulgore, part 2 again again\",\"level\":7,\"trivial\":false,\"complete\":false,\"obj\":[{\"text\":\"Collected thing 1 for quest 2\",\"have\":0,\"need\":6},{\"text\":\"Collected thing 2 for quest 2\",\"have\":1,\"need\":6},{\"text\":\"Collected thing 3 for quest 2\",\"have\":2,\"need\":6}]},{\"id\":1491,\"title\":\"Ñandú and Ögre along the roads of The Barrens, part 3\",\"level\":8,\"trivial\":false,\"complete\":false,\"obj\":[{\"text\":\"Collected thing 1 for quest 3\",\"have\":0,\"need\":6},{\"text\":\"Collected thing 2 for quest 3\",\"have\":1,\"need\":6},{\"text\":\"Collected thing 3 for quest 3\",\"have\":2,\"need\":6},{\"text\":\"Collected thing 4 for quest 3\",\"have\":3,\"need\":6}]},{\"id\":1492,\"title\":\"Errands along the roads of The Barrens, part 4 again\",\"level\":9,\"trivial\":false,\"complete\":false,\"obj\":[{\"text\":\"Collected thing 1 for quest 4\",\"have\":0,\"need\":6},{\"text\":\"Collected thing 2 for quest 4\",\"have\":1,\"need\":6},{\"text\":\"Collected thing 3 for quest 4\",\"have\":2,\"need\":6},{\"text\":\"Collected thing 4 for quest 4\",\"have\":3,\"need\":6},{\"text\":\"Collected thing 5 for quest 4\",\"have\":4,\"need\":6}]},{\"id\":1493,\"title\":\"The \\\"Wanted\\\" poster of The Barrens, part 5 again again\",\"level\":10,\"trivial\":false,\"complete\":true},{\"id\":1494,\"title\":\"Errands along the roads of Stonetalon Mountains, part 6\",\"level\":11,\"trivial\":false,\"complete\":false,\"obj\":[{\"text\":\"Collected thing 1 for quest 6\",\"have\":0,\"need\":6},{\"text\":\"Collected thing 2 for quest 6\",\"have\":1,\"need\":6}]},{\"id\":1495,\"title\":\"Errands along the roads of Stonetalon Mountains, part 7\",\"level\":12,\"trivial\":false,\"complete\":false,\"obj\":[{\"text\":\"Collected thing 1 for quest 7\",\"have\":0,\"need\":6},{\"text\":\"Collected thing 2 for quest 7\",\"have\":1,\"need\":6},{\"text\":\"Collected thing 3 for quest 7\",\"have\":2,\"need\":6}]},{\"id\":1496,\"title\":\"Errands along the roads of Stonetalon Mountains, part 8\",\"level\":13,\"trivial\":false,\"complete\":false,\"obj\":[{\"text\":\"Collected thing 1 for quest 8\",\"have\":0,\"need\":6},{\"text\":\"Collected thing 2 for quest 8\",\"have\":1,\"need\":6},{\"text\":\"Collected thing 3 for quest 8\",\"have\":2,\"need\":6},{\"text\":\"Collected thing 4 for quest 8\",\"have\":3,\"need\":6}]},{\"id\":1497,\"title\":\"Errands along the roads of Ashenvale, part 9 again\",\"level\":14,\"trivial\":true,\"complete\":true},{\"id\":1498,\"title\":\"Ñandú and Ögre along the roads of Ashenvale, part 10\",\"level\":15,\"trivial\":false,\"complete\":false,\"obj\":[{\"text\":\"Collected thing 1 for quest 10\",\"have\":0,\"need\":6}]},{\"id\":1499,\"title\":\"Errands along the roads of Ashenvale, part 11 again\",\"level\":16,\"trivial\":false,\"complete\":false,\"obj\":[{\"text\":\"Collected thing 1 for quest 11\",\"have\":0,\"need\":6},{\"text\":\"Collected thing 2 for quest 11\",\"have\":1,\"need\":6}]},{\"id\":1500,\"title\":\"Errands along the roads of Thousand Needles, part 12\",\"level\":17,\"trivial\":false,\"complete\":false,\"obj\":[{\"text\":\"Collected thing 1 for quest 12\",\"have\":0,\"need\":6},{\"text\":\"Collected thing 2 for quest 12\",\"have\":1,\"need\":6},{\"text\":\"Collected thing 3 for quest 12\",\"have\":2,\"need\":6}]},{\"id\":1501,\"title\":\"Errands along the roads of Thousand Needles, part 13\",\"level\":18,\"trivial\":false,\"complete\":true},{\"id\":1502,\"title\":\"Errands along the roads of Thousand Needles, part 14\",\"level\":19,\"trivial\":false,\"complete\":false,\"obj\":[{\"text\":\"Collected thing 1 for quest 14\",\"have\":0,\"need\":6},{\"text\":\"Collected thing 2 for quest 14\",\"have\":1,\"need\":6},{\"text\":\"Collected thing 3 for quest 14\",\"have\":2,\"need\":6},{\"text\":\"Collected thing 4 for quest 14\",\"have\":3,\"need\":6},{\"text\":\"Collected thing 5 for quest 14\",\"have\":4,\"need\":6}]},{\"id\":1503,\"title\":\"Errands along the roads of Desolace, part 15 again\",\"level\":20,\"trivial\":false,\"complete\":false,\"obj\":[{\"text\":\"Collected thing 1 for quest 15\",\"have\":0,\"need\":6}]},{\"id\":1504,\"title\":\"Errands along the roads of Desolace, part 16 again\",\"level\":21,\"trivial\":false,\"complete\":false,\"obj\":[{\"text\":\"Collected thing 1 for quest 16\",\"have\":0,\"need\":6},{\"text\":\"Collected thing 2 for quest 16\",\"have\":1,\"need\":6}]},{\"id\":1505,\"title\":\"Ñandú and Ögre along the roads of Desolace, part 17\",\"level\":22,\"trivial\":false,\"complete\":true},{\"id\":1506,\"title\":\"Errands along the roads of Hillsbrad Foothills, part 18\",\"level\":23,\"trivial\":true,\"complete\":false,\"obj\":[{\"text\":\"Collected thing 1 for quest 18\",\"have\":0,\"need\":6},{\"text\":\"Collected thing 2 for quest 18\",\"have\":1,\"need\":6},{\"text\":\"Collected thing 3 for quest 18\",\"have\":2,\"need\":6},{\"text\":\"Collected thing 4 for quest 18\",\"have\":3,\"need\":6}]},{\"id\":1507,\"title\":\"Errands along the roads of Hillsbrad Foothills, part 19\",\"level\":24,\"trivial\":false,\"complete\":false,\"obj\":[{\"text\":\"Collected thing 1 for quest 19\",\"have\":0,\"need\":6},{\"text\":\"Collected thing 2 for quest 19\",\"have\":1,\"need\":6},{\"text\":\"Collected thing 3 for quest 19\",\"have\":2,\"need\":6},{\"text\":\"Collected thing 4 for quest 19\",\"have\":3,\"need\":6},{\"text\":\"Collected thing 5 for quest 19\",\"have\":4,\"need\":6}]},{\"id\":1508,\"title\":\"Errands along the roads of Hillsbrad Foothills, part 20\",\"level\":5,\"trivial\":false,\"complete\":false,\"obj\":[{\"text\":\"Collected thing 1 for quest 20\",\"have\":0,\"need\":6}]},{\"id\":1509,\"title\":\"Errands along the roads of Arathi Highlands, part 21\",\"level\":6,\"trivial\":false,\"complete\":true},{\"id\":1510,\"title\":\"Errands along the roads of Arathi Highlands, part 22\",\"level\":7,\"trivial\":false,\"complete\":false,\"obj\":[{\"text\":\"Collected thing 1 for quest 22\",\"have\":0,\"need\":6},{\"text\":\"Collected thing 2 for quest 22\",\"have\":1,\"need\":6},{\"text\":\"Collected thing 3 for quest 22\",\"have\":2,\"need\":6}]},{\"id\":1511,\"title\":\"Errands along the roads of Arathi Highlands, part 23\",\"level\":8,\"trivial\":false,\"complete\":false,\"obj\":[{\"text\":\"Collected thing 1 for quest 23\",\"have\":0,\"need\":6},{\"text\":\"Collected thing 2 for quest 23\",\"have\":1,\"need\":6},{\"text\":\"Collected thing 3 for quest 23\",\"have\":2,\"need\":6},{\"text\":\"Collected thing 4 for quest 23\",\"have\":3,\"need\":6}]},{\"id\":1512,\"title\":\"Ñandú and Ögre along the roads of Dustwallow Marsh, part\",\"level\":9,\"trivial\":false,\"complete\":false,\"obj\":[{\"text\":\"Collected thing 1 for quest 24\",\"have\":0,\"need\":6},{\"text\":\"Collected thing 2 for quest 24\",\"have\":1,\"need\":6},{\"text\":\"Collected thing 3 for quest 24\",\"have\":2,\"need\":6},{\"text\":\"Collected thing 4 for quest 24\",\"have\":3,\"need\":6},{\"text\":\"Collected thing 5 for quest 24\",\"have\":4,\"need\":6}]},{\"id\":1513,\"title\":\"Errands along the roads of Dustwallow Marsh, part 25\",\"level\":10,\"trivial\":false,\"complete\":true},{\"id\":1514,\"title\":\"Errands along the roads of Dustwallow Marsh, part 26\",\"level\":11,\"trivial\":false,\"complete\":false,\"obj\":[{\"text\":\"Collected thing 1 for quest 26\",\"have\":0,\"need\":6},{\"text\":\"Collected thing 2 for quest 26\",\"have\":1,\"need\":6}]},{\"id\":1515,\"title\":\"Errands along the roads of Stranglethorn Vale, part 27\",\"level\":12,\"trivial\":true,\"complete\":false,\"obj\":[{\"text\":\"Collected thing 1 for quest 27\",\"have\":0,\"need\":6},{\"text\":\"Collected thing 2 for quest 27\",\"have\":1,\"need\":6},{\"text\":\"Collected thing 3 for quest 27\",\"have\":2,\"need\":6}]},{\"id\":1516,\"title\":\"Errands along the roads of Stranglethorn Vale, part 28\",\"level\":13,\"trivial\":false,\"complete\":false,\"obj\":[{\"text\":\"Collected thing 1 for quest 28\",\"have\":0,\"need\":6},{\"text\":\"Collected thing 2 for quest 28\",\"have\":1,\"need\":6},{\"text\":\"Collected thing 3 for quest 28\",\"have\":2,\"need\":6},{\"text\":\"Collected thing 4 for quest 28\",\"have\":3,\"need\":6}]},{\"id\":1517,\"title\":\"Errands along the roads of Stranglethorn Vale, part 29\",\"level\":14,\"trivial\":false,\"complete\":true},{\"id\":1518,\"title\":\"Errands along the roads of Swamp of Sorrows, part 30\",\"level\":15,\"trivial\":false,\"complete\":false,\"obj\":[{\"text\":\"Collected thing 1 for quest 30\",\"have\":0,\"need\":6}]},{\"id\":1519,\"title\":\"Ñandú and Ögre along the roads of Swamp of Sorrows, part\",\"level\":16,\"trivial\":false,\"complete\":false,\"obj\":[{\"text\":\"Collected thing 1 for quest 31\",\"have\":0,\"need\":6},{\"text\":\"Collected thing 2 for quest 31\",\"have\":1,\"need\":6}]},{\"id\":1520,\"title\":\"Errands along the roads of Swamp of Sorrows, part 32\",\"level\":17,\"trivial\":false,\"complete\":false,\"obj\":[{\"text\":\"Collected thing 1 for quest 32\",\"have\":0,\"need\":6},{\"text\":\"Collected thing 2 for quest 32\",\"have\":1,\"need\":6},{\"text\":\"Collected thing 3 for quest 32\",\"have\":2,\"need\":6}]},{\"id\":1521,\"title\":\"Errands along the roads of Badlands, part 33 again\",\"level\":18,\"trivial\":false,\"complete\":true},{\"id\":1522,\"title\":\"Errands along the roads of Badlands, part 34 again\",\"level\":19,\"trivial\":false,\"complete\":false,\"obj\":[{\"text\":\"Collected thing 1 for quest 34\",\"have\":0,\"need\":6},{\"text\":\"Collected thing 2 for quest 34\",\"have\":1,\"need\":6},{\"text\":\"Collected thing 3 for quest 34\",\"have\":2,\"need\":6},{\"text\":\"Collected thing 4 for quest 34\",\"have\":3,\"need\":6},{\"text\":\"Collected thing 5 for quest 34\",\"have\":4,\"need\":6}]},{\"id\":1523,\"title\":\"Errands along the roads of Tanaris, part 35 again again\",\"level\":20,\"trivial\":false,\"complete\":false,\"obj\":[{\"text\":\"Collected thing 1 for quest 35\",\"have\":0,\"need\":6}]},{\"id\":1524,\"title\":\"Errands along the roads of Tanaris, part 36 again again\",\"level\":21,\"trivial\":true,\"complete\":false,\"obj\":[{\"text\":\"Collected thing 1 for quest 36\",\"have\":0,\"need\":6},{\"text\":\"Collected thing 2 for quest 36\",\"have\":1,\"need\":6}]},{\"id\":1525,\"title\":\"Errands along the roads of Feralas, part 37 again again\",\"level\":22,\"trivial\":false,\"complete\":true},{\"id\":1526,\"title\":\"Ñandú and Ögre along the roads of Feralas, part 38\",\"level\":23,\"trivial\":false,\"complete\":false,\"obj\":[{\"text\":\"Collected thing 1 for quest 38\",\"have\":0,\"need\":6},{\"text\":\"Collected thing 2 for quest 38\",\"have\":1,\"need\":6},{\"text\":\"Collected thing 3 for quest 38\",\"have\":2,\"need\":6},{\"text\":\"Collected thing 4 for quest 38\",\"have\":3,\"need\":6}]},{\"id\":1527,\"title\":\"Call of Fire\",\"level\":20,\"trivial\":false,\"complete\":true}],\"prof\":[{\"name\":\"Skinning\",\"rank\":75,\"max\":75},{\"name\":\"First Aid\",\"rank\":40,\"max\":75}],\"pending\":[],\"omitted\":[\"quests.obj.done\"]}"
+  }
+}

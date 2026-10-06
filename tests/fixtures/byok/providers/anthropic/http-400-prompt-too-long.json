@@ -1,0 +1,15 @@
+{
+  "status": 400,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "type": "error",
+    "error": {
+      "type": "invalid_request_error",
+      "message": "prompt is too long: 210000 tokens > 200000 maximum"
+    },
+    "request_id": "req_011FIXTURE"
+  },
+  "source": "context-windows page [S8]"
+}

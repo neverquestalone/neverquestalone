@@ -1,0 +1,27 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "id": "gen-FIXTURE",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": null,
+          "refusal": "No."
+        },
+        "finish_reason": "stop"
+      }
+    ],
+    "usage": {
+      "prompt_tokens": 10,
+      "completion_tokens": 1,
+      "total_tokens": 11,
+      "cost": 0.00001
+    }
+  },
+  "source": "OpenAI-compatible refusal field"
+}

@@ -1,0 +1,12 @@
+event: response.created
+data: {"type":"response.created","sequence_number":0,"response":{"id":"resp_FIXTURE","object":"response","status":"in_progress","model":"gpt-6-luna"}}
+
+event: response.refusal.delta
+data: {"type":"response.refusal.delta","sequence_number":1,"delta":"I can't help with that."}
+
+event: response.refusal.done
+data: {"type":"response.refusal.done","sequence_number":2,"refusal":"I can't help with that."}
+
+event: response.completed
+data: {"type":"response.completed","sequence_number":3,"response":{"id":"resp_FIXTURE","status":"completed","usage":{"input_tokens":1500,"input_tokens_details":{"cached_tokens":1024},"output_tokens":40,"output_tokens_details":{"reasoning_tokens":8},"total_tokens":1540}}}
+

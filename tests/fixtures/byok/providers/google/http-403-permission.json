@@ -1,0 +1,6 @@
+{
+  "source": "Gemini API troubleshooting: 403 PERMISSION_DENIED, a key whose project can't use the model. UNVERIFIED.",
+  "status": 403,
+  "headers": { "content-type": "application/json" },
+  "body": [{ "error": { "code": 403, "message": "Permission denied on resource project.", "status": "PERMISSION_DENIED" } }]
+}

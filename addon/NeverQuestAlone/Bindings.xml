@@ -1,0 +1,32 @@
+<Bindings>
+	<!-- The keys' own section in Options > Keybindings (C-127): the game names a
+	     section after the global a binding's category names (_G[category],
+	     Keybindings.lua:220-226), so category="BINDING_HEADER_NQA" is a
+	     section called NeverQuestAlone (Store.lua), as Blizzard_PingUI's keys get
+	     theirs, and Bind Keys opens the page at it. No header: the page draws one
+	     as a blank row. The binding names stay, so keys bound before still work.
+	     Key names: BINDING_NAME_NQA_* (Store.lua). -->
+	<!-- Replaces upstream's /r capture, which tainted /cast: this key opens the
+	     NeverQuestAlone window with the cursor in its input box, or closes it when it's
+	     open (bound to a chord like Ctrl-B or an F key, it closes even while you
+	     type). -->
+	<Binding name="NQA_OPEN_AND_TYPE" category="BINDING_HEADER_NQA">
+		if NeverQuestAlone and NeverQuestAlone.OpenAndType then NeverQuestAlone.OpenAndType() end
+	</Binding>
+	<!-- One key, one question, no typing (Commands.lua, ns.QuickAsk): what next,
+	     your target, or the hovered item. The answer lands in the HUD and
+	     in the "Quick questions" chat. -->
+	<Binding name="NQA_ASK_NEXT" category="BINDING_HEADER_NQA">
+		if NeverQuestAlone and NeverQuestAlone.QuickAsk then NeverQuestAlone.QuickAsk("next") end
+	</Binding>
+	<Binding name="NQA_ASK_TARGET" category="BINDING_HEADER_NQA">
+		if NeverQuestAlone and NeverQuestAlone.QuickAsk then NeverQuestAlone.QuickAsk("target") end
+	</Binding>
+	<Binding name="NQA_ASK_ITEM" category="BINDING_HEADER_NQA">
+		if NeverQuestAlone and NeverQuestAlone.QuickAsk then NeverQuestAlone.QuickAsk("item") end
+	</Binding>
+	<!-- The HUD's Okay: the newest reply is read and put away; nothing is sent. -->
+	<Binding name="NQA_OKAY" category="BINDING_HEADER_NQA">
+		if NeverQuestAlone and NeverQuestAlone.Okay then NeverQuestAlone.Okay() end
+	</Binding>
+</Bindings>

@@ -1,0 +1,210 @@
+# The public build (open-shell PRD lane 7): this repository's source at each release tag, built unsigned on
+# GitHub's runners and attested (GitHub artifact attestations), so anyone can check that a build came from
+# this repository's tag and was made by this workflow:
+#
+#   gh run download <run id> -R tommygeoco/neverquestalone -p 'public-build-*'
+#   gh attestation verify <file> -R tommygeoco/neverquestalone \
+#     --signer-workflow tommygeoco/neverquestalone/.github/workflows/public-build.yml \
+#     --source-ref refs/tags/v<version>
+#
+# What it proves: the tagged source builds, and these files are what this workflow built from it. What it
+# doesn't: NeverQuestAlone's own downloads are built privately and signed (Apple's notarization,
+# Microsoft-verified signing), so they aren't these files, and nothing yet shows that a signed download holds
+# this source (reproducible builds come later).
+#
+# It builds the app the tree's package.json names (its "plugin": plugins/wow/, NeverQuestAlone), for macOS
+# (the universal DMG and one zip per architecture, as a release has them) and Windows (the installer),
+# unsigned: no certificate, keychain discovery off, no publisher pinned. It runs on a v* tag (the release
+# workflow makes one per release) and by hand (Actions > public-build > Run workflow, on a tag). Only a tag's
+# build in a public repository is attested (GitHub attests only in public repositories on most plans); any
+# other run builds, and its summary says why it wasn't attested.
+#
+# Hardening:
+# - no secrets, and never pull_request or pull_request_target;
+# - a read-only token. id-token and attestations write are the attest job's alone, and that job runs nothing
+#   from the repository: it sums the build jobs' files and attests those sums;
+# - every action pinned to a commit SHA; no dependency cache; npm ci --ignore-scripts, and the other Mac
+#   keychain binding installed only from the locked tarball (tools/locked-tarball.mjs checks its SHA-512
+#   against the lockfile).
+name: public-build
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: public-build-${{ github.ref }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  DESKTOP_DIR: app/desktop
+  WIN_HELPER_OUT: bridge/capture/windows/build
+  # Unsigned on purpose: electron-builder never signs with whatever identity a runner's keychain holds.
+  CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+
+jobs:
+  macos:
+    runs-on: macos-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          package-manager-cache: false
+      - run: npm ci --ignore-scripts
+        working-directory: ${{ env.DESKTOP_DIR }}
+      - name: Both Mac keychain bindings, for the universal DMG and the x64 zip
+        # npm installs only the runner's own (arm64); the other is the locked tarball, installed only when
+        # its SHA-512 is the lockfile's integrity (tools/locked-tarball.mjs).
+        run: |
+          for arch in arm64 x64; do
+            pkg="@napi-rs/keyring-darwin-$arch"
+            if [ ! -d "$DESKTOP_DIR/node_modules/$pkg" ]; then
+              tgz=$(node tools/locked-tarball.mjs --lock "$DESKTOP_DIR/package-lock.json" --package "$pkg" --out "$RUNNER_TEMP/locked-tarballs") \
+                || { echo "::error::$pkg: no tarball matching the lockfile's integrity"; exit 1; }
+              (cd "$DESKTOP_DIR" && npm install --no-save --ignore-scripts --force "$tgz")
+            fi
+            if ! ls "$DESKTOP_DIR/node_modules/$pkg/"*.node > /dev/null 2>&1; then echo "::error::$pkg has no .node binding"; exit 1; fi
+          done
+          (cd "$DESKTOP_DIR" && npm audit signatures)
+      - name: Build, unsigned (scripts/dist.mjs builds the capture helper first, ad hoc)
+        working-directory: ${{ env.DESKTOP_DIR }}
+        run: node scripts/dist.mjs --mac --publish never
+      - name: Fuses (tools/check-fuses.mjs)
+        run: |
+          shopt -s nullglob
+          apps=("$DESKTOP_DIR"/dist/mac*/*.app)
+          if [ ${#apps[@]} -eq 0 ]; then echo "::error::no .app under $DESKTOP_DIR/dist"; exit 1; fi
+          for app in "${apps[@]}"; do node tools/check-fuses.mjs "$app"; done
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: public-build-macos
+          path: |
+            ${{ env.DESKTOP_DIR }}/dist/*.dmg
+            ${{ env.DESKTOP_DIR }}/dist/*.zip
+          if-no-files-found: error
+          retention-days: 7
+
+  capture-windows:
+    # The Windows capture helper, cross-compiled with the pinned zig (twice, the same bytes).
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Zig (pinned, checksum checked)
+        run: bridge/capture/windows/fetch-zig.sh "$RUNNER_TEMP/zig" >> "$GITHUB_ENV"
+      - name: Build
+        run: bridge/capture/windows/build.sh
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: capture-windows-helper
+          path: ${{ env.WIN_HELPER_OUT }}
+          if-no-files-found: error
+          retention-days: 7
+
+  windows:
+    needs: capture-windows
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          package-manager-cache: false
+      - run: npm ci --ignore-scripts
+        working-directory: ${{ env.DESKTOP_DIR }}
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: capture-windows-helper
+          path: ${{ env.WIN_HELPER_OUT }}
+      - name: Build, unsigned (scripts/dist.mjs; no certificate, so no publisher pinned)
+        working-directory: ${{ env.DESKTOP_DIR }}
+        run: node scripts/dist.mjs --win nsis --x64 --publish never
+      - name: Fuses (tools/check-fuses.mjs)
+        run: node tools/check-fuses.mjs "$DESKTOP_DIR/dist/win-unpacked"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: public-build-windows
+          path: ${{ env.DESKTOP_DIR }}/dist/*.exe
+          if-no-files-found: error
+          retention-days: 7
+
+  attest:
+    # The build jobs' files, summed and attested. It checks out nothing and runs nothing from the
+    # repository, so the only job that can sign an attestation never runs the code it attests.
+    needs: [macos, windows]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write # the short-lived signing certificate (Sigstore) for the attestation
+      attestations: write # stores the attestation with this repository
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: public-build-*
+          merge-multiple: true
+          path: public-build
+      - name: Checksums
+        working-directory: public-build
+        run: |
+          find . -maxdepth 1 -type f ! -name SHA256SUMS.txt -printf '%f\n' | sort > ../files.txt
+          if [ ! -s ../files.txt ]; then echo "::error::the build jobs left no files"; exit 1; fi
+          xargs -d '\n' sha256sum < ../files.txt > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+      - name: Can this run attest?
+        id: gate
+        env:
+          PRIVATE: ${{ github.event.repository.private }}
+        run: |
+          if [ "$PRIVATE" != false ]; then
+            echo "attest=false" >> "$GITHUB_OUTPUT"
+            echo "### Not attested: this repository is private, and GitHub attests only in public repositories on most plans." >> "$GITHUB_STEP_SUMMARY"
+          elif [[ "$GITHUB_REF" != refs/tags/v* ]]; then
+            echo "attest=false" >> "$GITHUB_OUTPUT"
+            echo "### Not attested: built from $GITHUB_REF, not a v* tag. Run it on a release tag." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "attest=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        if: steps.gate.outputs.attest == 'true'
+        with:
+          subject-checksums: public-build/SHA256SUMS.txt
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: public-build
+          path: public-build/
+          if-no-files-found: error
+      - name: Summary
+        env:
+          ATTESTED: ${{ steps.gate.outputs.attest }}
+        run: |
+          {
+            echo "### The public build of $GITHUB_REF_NAME (unsigned)"
+            echo
+            echo '```'
+            cat public-build/SHA256SUMS.txt
+            echo '```'
+            echo
+            if [ "$ATTESTED" = true ]; then
+              echo "Attested. Download the public-build artifact, then check a file with: gh attestation verify <file> -R $GITHUB_REPOSITORY --signer-workflow $GITHUB_REPOSITORY/.github/workflows/public-build.yml --source-ref $GITHUB_REF"
+            else
+              echo "Not attested (see above)."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,35 @@
+# scrub-terms example for tools/scrub-scan.mjs (PRD §15, DB18; B3.0, B6.1). Every value is made up.
+#
+# The real terms file names the people and machines a public tree must not mention, so it is
+# private and never tracked (.gitignore). Keep it outside every tree you scan and point the
+# scanner at it:
+#   node tools/scrub-scan.mjs --terms <file> ...     or   SCRUB_TERMS=<file> node tools/scrub-scan.mjs ...
+# In CI, store the file's text in the SCRUB_TERMS repository secret; release.yml passes it with
+# --terms-env SCRUB_TERMS_TEXT, so it never touches the runner's disk.
+#
+# The real file's first line is the private marker comment (TERMS_MARKER in scrub-scan.mjs,
+# after a "#"). A file with that line, or with the loaded terms' content, is a terms-file hit
+# wherever a scan reaches it.
+#
+# Format, one per line (blank lines and # comments are skipped):
+#   <pattern> <regex>            case-insensitive
+#   <pattern> /<regex>/<flags>   with your own flags
+#   ssh-alias <word>             the word only in host contexts (ssh lines, host settings, user@word)
+#   id-key <32+ characters>      keys the printed line ids (HMAC-SHA256) so they can't be reversed;
+#                                tools/scrub-allow.txt ids depend on it. Make one with
+#                                node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+# Pattern names are printed in reports, so keep them generic.
+# A term with a \b, or a space between words, also matches glued to other letters in text, as
+# <pattern>-joined (a short one only where an identifier joins it; scrub-scan.mjs, "Joined
+# terms"), so names ending in -joined are the scanner's own.
+
+id-key     example-id-key-made-up-for-the-docs-0123456789abcdef
+hostname   \bexamplehost\b
+hostname   \bexample-box\b
+ssh-alias  box
+home-path  [\\/]Users[\\/]someone(?![\w.-])
+home-path  (?:~|\$HOME|%USERPROFILE%)[\\/]Dev[\\/]
+bundle-id  com\.someone\.
+name       \bsomeone\b
+character  \bexamplechar\b
+vault-path Notes/Private/

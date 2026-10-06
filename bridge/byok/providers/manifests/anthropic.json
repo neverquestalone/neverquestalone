@@ -1,0 +1,165 @@
+{
+  "schema": 1,
+  "id": "anthropic",
+  "name": "Anthropic",
+  "order": 10,
+  "hidden": false,
+  "local": false,
+  "adapter": "anthropic-messages",
+  "baseUrl": "https://api.anthropic.com/v1",
+  "hosts": ["api.anthropic.com"],
+  "auth": { "header": "x-api-key", "scheme": null },
+  "headers": { "anthropic-version": "2023-06-01" },
+  "keyPattern": "^sk-ant-[a-z]{2,8}\\d{0,3}-[A-Za-z0-9_-]{20,}$",
+  "keyRejectPattern": "^sk-ant-admin\\d{2}-",
+  "keyMatchOrder": 10,
+  "keyExample": "sk-ant-api03-…",
+  "requestIdHeader": "request-id",
+  "paths": { "chat": "/messages", "models": "/models?limit=1000" },
+  "keyCheck": null,
+  "models": {
+    "default": "claude-sonnet-5-5",
+    "smarter": "claude-opus-5-5",
+    "allowAny": false,
+    "list": [
+      { "id": "claude-sonnet-5-5", "label": "Claude Sonnet 5.5", "costRank": 2, "effort": true, "contextTokens": 1000000, "outputTokens": 128000, "cacheMinTokens": 512,
+        "source": "Anthropic's models overview (https://platform.claude.com/docs/en/about-claude/models/overview, read 2026-09-30): Claude API ID claude-sonnet-5-5, adaptive thinking, default effort high, 1M context, 128K output. Price (https://platform.claude.com/docs/en/about-claude/pricing): $2 input, $10 output, $0.20 cache hits, $2.50 and $4 cache writes (5 minutes, 1 hour). Effort low to max (https://platform.claude.com/docs/en/build-with-claude/effort); thinking type between_tools turns up-front thinking off at effort high or below, and disabled is refused (https://platform.claude.com/docs/en/build-with-claude/thinking-troubleshooting)." },
+      { "id": "claude-opus-5-5", "label": "Claude Opus 5.5", "costRank": 3, "effort": true, "contextTokens": 1000000, "outputTokens": 128000, "cacheMinTokens": 512,
+        "source": "Anthropic's models overview (https://platform.claude.com/docs/en/about-claude/models/overview, read 2026-09-30): claude-opus-5-5, adaptive thinking always on (disabled is refused), default effort medium, 1M context, 128K output (read 2026-10-02). Price (https://platform.claude.com/docs/en/about-claude/pricing): $4 input, $20 output, $0.20 cache hits (0.05x), $5 and $8 cache writes. Effort low to max (https://platform.claude.com/docs/en/build-with-claude/effort)." },
+      { "id": "claude-fable-5-1", "label": "Claude Fable 5.1", "costRank": 4, "effort": true, "contextTokens": 1000000, "outputTokens": 128000, "cacheMinTokens": 512,
+        "source": "Anthropic's models overview (https://platform.claude.com/docs/en/about-claude/models/overview, read 2026-09-30): claude-fable-5-1, adaptive thinking always on (disabled is refused), default effort high, 1M context, 128K output (read 2026-10-02); one of the Covered Models kept at least 30 days. Price (https://platform.claude.com/docs/en/about-claude/pricing): $10 input, $50 output, $0.25 cache hits (0.025x), $12.50 and $20 cache writes. Effort low to max (https://platform.claude.com/docs/en/build-with-claude/effort)." },
+      { "id": "claude-sonnet-5", "label": "Claude Sonnet 5", "costRank": 2, "effort": true, "contextTokens": 1000000, "outputTokens": 128000, "cacheMinTokens": 1024, "replacedBy": "claude-sonnet-5-5",
+        "source": "A legacy model, still available (https://platform.claude.com/docs/en/about-claude/models/overview, read 2026-09-30; 128K output, https://platform.claude.com/docs/en/models/sonnet-5/overview, read 2026-10-02): adaptive thinking on by default, thinking type disabled accepted (https://platform.claude.com/docs/en/build-with-claude/thinking-troubleshooting), effort low to max. Price (https://platform.claude.com/docs/en/about-claude/pricing): $2 input, $10 output, now the standard price (the step to $3 and $15 on 2026-09-01 didn't happen)." },
+      { "id": "claude-haiku-4-5", "label": "Claude Haiku 4.5", "costRank": 1, "effort": true, "contextTokens": 200000, "outputTokens": 64000, "cacheMinTokens": 4096,
+        "retiresAfter": "2026-10-15", "moveTo": "claude-sonnet-5-5",
+        "source": "Anthropic's models overview (https://platform.claude.com/docs/en/about-claude/models/overview, read 2026-09-30): alias claude-haiku-4-5 (claude-haiku-4-5-20251001), extended thinking only (thinking type enabled with budget_tokens of at least 1,024, below max_tokens), off by default, no effort parameter, 200K context, 64K output. Price (https://platform.claude.com/docs/en/about-claude/pricing): $1 input, $5 output, $0.10 cache hits. Retirement (https://platform.claude.com/docs/en/about-claude/model-deprecations, read 2026-10-02): active, tentative retirement date not sooner than October 15, 2026 (retiresAfter); no cheaper Claude replaces it, so the window offers the default, Claude Sonnet 5.5 (moveTo)." }
+    ]
+  },
+  "effort": {
+    "claude-sonnet-5-5": {
+      "off": { "thinking": { "type": "between_tools" }, "output_config": { "effort": "low" } },
+      "low": { "output_config": { "effort": "low" } },
+      "medium": { "output_config": { "effort": "medium" } },
+      "high": { "output_config": { "effort": "high" } },
+      "xhigh": { "output_config": { "effort": "xhigh" } },
+      "max": { "output_config": { "effort": "max" } }
+    },
+    "claude-opus-5-5": {
+      "low": { "output_config": { "effort": "low" } },
+      "medium": { "output_config": { "effort": "medium" } },
+      "high": { "output_config": { "effort": "high" } },
+      "xhigh": { "output_config": { "effort": "xhigh" } },
+      "max": { "output_config": { "effort": "max" } }
+    },
+    "claude-fable-5-1": {
+      "low": { "output_config": { "effort": "low" } },
+      "medium": { "output_config": { "effort": "medium" } },
+      "high": { "output_config": { "effort": "high" } },
+      "xhigh": { "output_config": { "effort": "xhigh" } },
+      "max": { "output_config": { "effort": "max" } }
+    },
+    "claude-sonnet-5": {
+      "off": { "thinking": { "type": "disabled" }, "output_config": { "effort": "low" } },
+      "low": { "output_config": { "effort": "low" } },
+      "medium": { "output_config": { "effort": "medium" } },
+      "high": { "output_config": { "effort": "high" } },
+      "xhigh": { "output_config": { "effort": "xhigh" } },
+      "max": { "output_config": { "effort": "max" } }
+    },
+    "claude-haiku-4-5": {
+      "off": {},
+      "minimal": { "thinking": { "type": "enabled", "budget_tokens": 1024 } },
+      "low": { "thinking": { "type": "enabled", "budget_tokens": 2048 } },
+      "medium": { "thinking": { "type": "enabled", "budget_tokens": 4096 } },
+      "high": { "thinking": { "type": "enabled", "budget_tokens": 8192 } },
+      "xhigh": { "thinking": { "type": "enabled", "budget_tokens": 32768 } },
+      "max": { "thinking": { "type": "enabled", "budget_tokens": 62800 } }
+    }
+  },
+  "rateLimitHeaders": {
+    "resetFormat": "rfc3339",
+    "buckets": {
+      "requests": { "limit": "anthropic-ratelimit-requests-limit", "remaining": "anthropic-ratelimit-requests-remaining", "reset": "anthropic-ratelimit-requests-reset" },
+      "tokens": { "limit": "anthropic-ratelimit-tokens-limit", "remaining": "anthropic-ratelimit-tokens-remaining", "reset": "anthropic-ratelimit-tokens-reset" },
+      "inputTokens": { "limit": "anthropic-ratelimit-input-tokens-limit", "remaining": "anthropic-ratelimit-input-tokens-remaining", "reset": "anthropic-ratelimit-input-tokens-reset" },
+      "outputTokens": { "limit": "anthropic-ratelimit-output-tokens-limit", "remaining": "anthropic-ratelimit-output-tokens-remaining", "reset": "anthropic-ratelimit-output-tokens-reset" }
+    }
+  },
+  "errorMap": {
+    "codes": { "enforced_spend_limit_reached": "spend_limit" },
+    "messages": [
+      { "text": "credit balance is too low", "kind": "out_of_credit", "status": [400] },
+      { "text": "specified API usage limits", "kind": "spend_limit", "status": [400] },
+      { "text": "specified workspace API usage limits", "kind": "spend_limit", "status": [400] },
+      { "text": "prompt is too long", "kind": "context_too_long", "status": [400] }
+    ],
+    "types": {
+      "authentication_error": "auth_invalid",
+      "permission_error": "bad_request",
+      "billing_error": "out_of_credit",
+      "not_found_error": "model_not_found",
+      "request_too_large": "context_too_long",
+      "rate_limit_error": "rate_limited",
+      "api_error": "overloaded",
+      "timeout_error": "overloaded",
+      "overloaded_error": "overloaded",
+      "invalid_request_error": "bad_request"
+    },
+    "status": { "402": "out_of_credit", "403": "bad_request", "413": "context_too_long", "529": "overloaded" },
+    "notes": "Low credit arrives as 402 billing_error in the docs and as a 400 with 'credit balance is too low' in the field; both are handled. A tier spend cap is a 429 whose error.details.error_code is enforced_spend_limit_reached, with no retry-after; it fails until 00:00 UTC on the 1st. A 403 permission_error is a permission or workspace problem with a good key (no access to that model), never a rejected key: only the 401 is (§10)."
+  },
+  "privacy": {
+    "class": "cloud-no-train",
+    "retention": "Deleted within 30 days by default; at least 30 days on the Covered Models (Fable 5/5.1, Mythos 5/5.1); flagged content up to 2 years",
+    "trains": "No, unless you send feedback",
+    "zdr": "By arrangement with sales, per organization",
+    "sets": "Nothing to set",
+    "notes": "Keys are Console API keys. There's no balance endpoint for normal keys.",
+    "player": {
+      "short": "Deletes messages within 30 days by default; no training without your feedback.",
+      "keeps": "Deleted within 30 days by default; longer on some newer models. Flagged content is kept up to 2 years.",
+      "trains": "No, unless you send Anthropic feedback.",
+      "zeroRetention": "By arrangement with Anthropic’s sales team.",
+      "sets": "Nothing extra."
+    },
+    "sources": ["S20"]
+  },
+  "terms": {
+    "login": "API key only (DB6). Third-party apps may not offer Claude.ai login or route Free, Pro or Max credentials.",
+    "notes": [
+      "A Claude Pro or Max subscription isn't an API key and doesn't include API credit.",
+      "Unscoped personal keys need the anthropic-workspace-id header.",
+      "Never send temperature, top_p or top_k: Sonnet 5 and 4.7+ models reject them."
+    ],
+    "playerNotes": [
+      "A Claude Pro or Max subscription isn’t an API key and doesn’t include API credit.",
+      "New Console accounts get a small starter credit."
+    ],
+    "sources": ["S1", "S11", "S12", "S13", "S19"]
+  },
+  "defaultRequestOptions": {},
+  "safetyIdentifier": false,
+  "limits": { "maxOutputTokens": 1200, "testMaxTokens": 1 },
+  "priceSource": "bundled",
+  "display": {
+    "card": "Claude",
+    "maker": "Anthropic",
+    "order": 10,
+    "termsVersion": 1,
+    "noCreditDocumented": true,
+    "keyPrefix": "sk-ant-",
+    "placeholder": "sk-ant-api…",
+    "openLink": "keys",
+    "stepLinks": { "step2": "billing" },
+    "fields": ["Expires", "Workspace", "Create key", "Copy"]
+  },
+  "links": {
+    "keys": "https://platform.claude.com/settings/keys",
+    "billing": "https://platform.claude.com/settings/billing",
+    "limits": "https://platform.claude.com/settings/billing",
+    "privacy": "https://privacy.claude.com/en/articles/7996866-how-long-do-you-store-my-organization-s-data",
+    "terms": "https://www.anthropic.com/legal/commercial-terms",
+    "verified": false
+  },
+  "sources": ["S1", "S2", "S4", "S5", "S6", "S7", "S8", "S9", "S10", "S18", "S19"]
+}

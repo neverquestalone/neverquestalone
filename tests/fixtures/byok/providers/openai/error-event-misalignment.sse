@@ -1,0 +1,9 @@
+event: response.created
+data: {"type":"response.created","sequence_number":0,"response":{"id":"resp_FIXTURE","object":"response","status":"in_progress","model":"gpt-6-luna"}}
+
+event: response.output_text.delta
+data: {"type":"response.output_text.delta","sequence_number":1,"item_id":"msg_1","output_index":0,"content_index":0,"delta":"Su"}
+
+event: error
+data: {"type":"error","code":"misalignment_policy_violation","message":"This request was blocked.","param":null,"sequence_number":2}
+

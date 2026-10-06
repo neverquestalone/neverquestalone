@@ -1,0 +1,6 @@
+{
+  "source": "Gemini API troubleshooting: 429 RESOURCE_EXHAUSTED, a quota (on the free tier, a model with limit 0 until billing is set up). UNVERIFIED.",
+  "status": 429,
+  "headers": { "content-type": "application/json" },
+  "body": [{ "error": { "code": 429, "message": "You exceeded your current quota, please check your plan and billing details.", "status": "RESOURCE_EXHAUSTED" } }]
+}

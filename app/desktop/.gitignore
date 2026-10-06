@@ -1,0 +1,3 @@
+# Build output and local installs for the desktop app
+dist/
+node_modules/

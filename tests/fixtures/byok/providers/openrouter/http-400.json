@@ -1,0 +1,13 @@
+{
+  "status": 400,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "error": {
+      "code": 400,
+      "message": "Invalid request"
+    }
+  },
+  "source": "errors-and-debugging [S66]"
+}

@@ -1,0 +1,16 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "object": "list",
+    "data": [
+      {
+        "id": "qwen/qwen3-8b",
+        "object": "model"
+      }
+    ]
+  },
+  "source": "GET /v1/models [S79]"
+}

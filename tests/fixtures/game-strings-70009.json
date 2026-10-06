@@ -1,0 +1,14 @@
+{
+  "about": "The game's own words that the addon's lines quote (menu paths and the things to click), in English, from WoW: Forever build 1.60.1.70009's GlobalStrings (wago.tools' GlobalStrings table, read 2026-09-27; id is the row's ID there). The AddOns list's category row menu is ADDON_LIST_ENABLE_CATEGORY, ADDON_LIST_DISABLE_CATEGORY and ADDON_LIST_RESET_ALL_TO_DEFAULT (AddonList.lua:952-961 at wow-ui-source bd2470a); no string on that build reads \"Enable All in Category\" (C-128).",
+  "build": "1.60.1.70009",
+  "strings": {
+    "MAINMENU_BUTTON": { "id": 9599, "text": "Game Menu" },
+    "ADDONS": { "id": 18168, "text": "AddOns" },
+    "RELOADUI": { "id": 25401, "text": "Reload UI" },
+    "SETTINGS_TITLE": { "id": 49032, "text": "Options" },
+    "SETTINGS_KEYBINDINGS_LABEL": { "id": 49040, "text": "Keybindings" },
+    "ADDON_LIST_DISABLE_CATEGORY": { "id": 52934, "text": "Disable All AddOns" },
+    "ADDON_LIST_RESET_ALL_TO_DEFAULT": { "id": 52935, "text": "Reset All to Default" },
+    "ADDON_LIST_ENABLE_CATEGORY": { "id": 52937, "text": "Enable All AddOns" }
+  }
+}

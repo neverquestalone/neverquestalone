@@ -1,0 +1,879 @@
+/* NeverQuestAlone's window: "the companion panel" (the redesign's build spec, 2026-09-30), drawn
+   the way a modern Mac utility is (the 1.3 refresh, after Raycast): flat near-black surfaces, no
+   gradients and no glows, compact rows, quiet sentence-case section names, key hints in small
+   chips. The colours are the landing's shared tokens (one product); the type is the landing's own
+   faces, bundled (Inter 400/500, JetBrains Mono 500), never faux bold. One accent, gold, used
+   sparingly: the one primary button, the current thing, Bones's eye. The one game shape is the
+   diamond (the quest tracker, the objectives, the wordmark). Click, never hover: hover only tints
+   a colour, and the one thing it shows is Bones's state beside his portrait (the owner's ask). */
+
+@font-face { font-family: "NQA Sans"; src: url(fonts/inter-400.woff2) format("woff2"); font-weight: 400; font-style: normal; font-display: block; }
+@font-face { font-family: "NQA Sans"; src: url(fonts/inter-500.woff2) format("woff2"); font-weight: 500; font-style: normal; font-display: block; }
+@font-face { font-family: "NQA Mono"; src: url(fonts/jetbrains-mono-500.woff2) format("woff2"); font-weight: 500; font-style: normal; font-display: block; }
+
+:root {
+  color-scheme: dark;
+  /* The shared tokens (SHARED-TOKENS.md: the landing and the app, one product). */
+  /* Depth, darkest to lightest (CL-design-15): sunk (inputs, code, wells) < the stage < Bones's
+     panel < a surface (rows, groups, the sheet) < raised (hover, the current thing, the speech
+     card). The stage, surface and raised are the shared tokens; sunk goes below the stage, so a
+     well reads as sunk, never raised. */
+  --bg: #0f0e12;          /* the window, the stage */
+  --side: #131217;        /* Bones's panel */
+  --surface: #16151a;     /* rows, groups, the sheet */
+  --raised: #211f26;      /* hover tint of a surface; the current objective; the speech card */
+  --sunk: #0b0a0e;        /* inputs, code, wells inside a surface */
+  --text: #ecebe7;
+  --muted: #a8a49b;
+  --faint: #7f7b73;       /* decoration only, never text */
+  --line: #2b2931;        /* edges: quiet, as a Mac utility's are */
+  --hair: #222027;        /* dividers inside a group */
+  --tint-1: rgba(255, 255, 255, .04); /* hover on a flat row */
+  --tint-2: rgba(255, 255, 255, .075); /* the current row, a pressed row */
+  --line-strong: #76717f; /* control edges: radio rings, inputs, a switch that's off (3:1 or better) */
+  --accent: #e3a458; --accent-hover: #f2bd78; --accent-ink: #1c1407; --accent-soft: #3a2c1a;
+  --ok: #74cf97; --ok-soft: #1d3326;
+  --warn: #e8c35a; --warn-soft: #362d14;
+  --bad: #f4675a; --bad-soft: #3c1f1d;
+  --needs: #ef3f2c;       /* something needs you: the red of Bones's gem, its tip dot and the Home dot */
+  --focus: #7aa7ff;
+  --wash: rgba(227, 164, 88, .075);
+  --scrim: rgba(9, 8, 11, .6);
+
+  /* The Mac's own face first: -apple-system is SF Pro, Text at small sizes and Display at title sizes (the
+     owner, 2026-10-03). Apple's licence keeps it on Apple's systems, so it's used, never bundled; Windows
+     and the rest get the bundled Inter. */
+  --sans: -apple-system, BlinkMacSystemFont, "NQA Sans", "Segoe UI Variable Text", "Segoe UI", Roboto, sans-serif;
+  --mono: "NQA Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  --panel-w: 252px;
+  --portrait: 96px;
+  --gutter: 44px;
+  --title-h: 52px;        /* the window's title strip: the traffic lights, the wordmark, the top bar */
+  --col: 600px;
+
+  --r-xs: 5px; --r-sm: 6px; --r-md: 8px; --r-lg: 12px; --r-xl: 12px;
+  --sh-card: none;
+  --sh-lift: none;
+  --sh-primary: none;
+  --sh-pop: 0 8px 24px rgba(0, 0, 0, .45), 0 0 0 1px rgba(0, 0, 0, .2);
+  --tint: 120ms ease-out;
+  font-synthesis: none;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg); overflow: hidden; }
+body {
+  color: var(--text); font: 400 14px/20px var(--sans);
+  -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+  font-feature-settings: normal;
+}
+/* Inter's alternates (its single-storey a, open digits) only where Inter is the face: SF keeps its own. */
+.app:not([data-os="darwin"]) { font-feature-settings: "cv11", "ss01"; }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+p { margin: 0; }
+h1, h2, h3 { margin: 0; font-weight: 500; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.nowrap { white-space: nowrap; }
+.mono { font-family: var(--mono); font-weight: 500; font-size: 14px; letter-spacing: -.01em; }
+.muted { color: var(--muted); }
+.small { font-size: 14px; line-height: 20px; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+:focus:not(:focus-visible) { outline: none; }
+h1:focus, #sheet-title:focus, .page:focus { outline: none; }
+[hidden] { display: none !important; }
+
+/* Icons: original line icons on a 20 grid (icons/*.svg), drawn in the text colour as masks. */
+.ico { display: inline-block; flex: none; width: 16px; height: 16px; background-color: currentColor; -webkit-mask: center / contain no-repeat; mask: center / contain no-repeat; }
+.ico-home { -webkit-mask-image: url(icons/home.svg); mask-image: url(icons/home.svg); }
+.ico-spark { -webkit-mask-image: url(icons/spark.svg); mask-image: url(icons/spark.svg); }
+.ico-bars { -webkit-mask-image: url(icons/bars.svg); mask-image: url(icons/bars.svg); }
+.ico-plug { -webkit-mask-image: url(icons/plug.svg); mask-image: url(icons/plug.svg); }
+.ico-clock { -webkit-mask-image: url(icons/clock.svg); mask-image: url(icons/clock.svg); }
+.ico-gear { -webkit-mask-image: url(icons/gear.svg); mask-image: url(icons/gear.svg); }
+.ico-info { -webkit-mask-image: url(icons/info.svg); mask-image: url(icons/info.svg); }
+.ico-out { -webkit-mask-image: url(icons/out.svg); mask-image: url(icons/out.svg); }
+.ico-copy { -webkit-mask-image: url(icons/copy.svg); mask-image: url(icons/copy.svg); }
+.ico-check { -webkit-mask-image: url(icons/check.svg); mask-image: url(icons/check.svg); }
+.ico-warn { -webkit-mask-image: url(icons/warn.svg); mask-image: url(icons/warn.svg); }
+.ico-bad { -webkit-mask-image: url(icons/bad.svg); mask-image: url(icons/bad.svg); }
+.ico-ok { -webkit-mask-image: url(icons/ok.svg); mask-image: url(icons/ok.svg); }
+.ico-x { -webkit-mask-image: url(icons/x.svg); mask-image: url(icons/x.svg); }
+.ico-none { -webkit-mask-image: url(icons/none.svg); mask-image: url(icons/none.svg); }
+.ico-back { -webkit-mask-image: url(icons/back.svg); mask-image: url(icons/back.svg); }
+.ico-chevron { -webkit-mask-image: url(icons/chevron.svg); mask-image: url(icons/chevron.svg); }
+.ico-pause { -webkit-mask-image: url(icons/pause.svg); mask-image: url(icons/pause.svg); }
+.ico-play { -webkit-mask-image: url(icons/play.svg); mask-image: url(icons/play.svg); }
+.ico-refresh { -webkit-mask-image: url(icons/refresh.svg); mask-image: url(icons/refresh.svg); }
+.ico-dia { -webkit-mask-image: url(icons/dia.svg); mask-image: url(icons/dia.svg); }
+.ico-computer { -webkit-mask-image: url(icons/computer.svg); mask-image: url(icons/computer.svg); }
+.ico-pin { -webkit-mask-image: url(icons/pin.svg); mask-image: url(icons/pin.svg); }
+.ico-route { -webkit-mask-image: url(icons/route.svg); mask-image: url(icons/route.svg); }
+.ico-chat { -webkit-mask-image: url(icons/chat.svg); mask-image: url(icons/chat.svg); }
+.ico-shield { -webkit-mask-image: url(icons/shield.svg); mask-image: url(icons/shield.svg); }
+.ico-dia-done { -webkit-mask-image: url(icons/dia-done.svg); mask-image: url(icons/dia-done.svg); color: var(--accent); }
+.ico-dia-now { -webkit-mask-image: url(icons/dia-now.svg); mask-image: url(icons/dia-now.svg); color: var(--accent); }
+.ico-dia-next { -webkit-mask-image: url(icons/dia-next.svg); mask-image: url(icons/dia-next.svg); color: var(--line-strong); }
+.ico-dia-warn { -webkit-mask-image: url(icons/dia-warn.svg); mask-image: url(icons/dia-warn.svg); color: var(--warn); }
+
+/* ---------------------------------------------------------------------------
+   The window: Bones's panel on the left, the stage on the right. */
+.app { display: grid; grid-template-columns: var(--panel-w) minmax(0, 1fr); height: 100vh; }
+
+/* Bones's panel: flat, a hairline from the stage. The title strip on top (the traffic lights and
+   the wordmark), Bones, the nav, and the foot (the version, Check for updates). It never scrolls. */
+.companion {
+  position: relative; display: flex; flex-direction: column; min-height: 0; overflow: hidden;
+  background: var(--side);
+  border-right: 1px solid var(--line);
+  padding: var(--title-h) 14px 0; -webkit-app-region: drag; user-select: none;
+}
+.app[data-mode="setup"] .companion { padding-bottom: 0; }
+.companion > * { position: relative; }
+.companion button, .companion a { -webkit-app-region: no-drag; }
+
+/* The wordmark: under Bones, a row of the menu (the owner, 2026-10-03: "under the skull, proper spacing as
+   the rest of the menu"): a nav row's height, inset and type, the diamond in the icons' column, the name
+   on the labels' line; the menu (or setup's steps) starts 6 px under it. */
+.companion > .wordmark {
+  display: grid; grid-template-columns: 16px 1fr; gap: 10px; align-items: center; height: 32px; margin: 12px 0 0; padding: 0 10px;
+  font: 500 14px/20px var(--sans); letter-spacing: 0; color: var(--text); white-space: nowrap;
+}
+/* SF's real Semibold (it only shows on a Mac), so it reads as the app's name, never a selected row. */
+.app[data-os="darwin"] .companion > .wordmark { font-weight: 600; }
+.app[data-mode="setup"] .companion > .wordmark { color: var(--muted); }
+.app[data-os="darwin"] .nav, .app[data-os="darwin"] .tracker { margin-top: 6px; }
+/* Windows and Linux draw their own title bar with the name in it: no second name. */
+.app:not([data-os="darwin"]) .companion > .wordmark { display: none; }
+.app:not([data-os="darwin"]) .companion { padding-top: 12px; }
+.wordmark-dia { justify-self: center; width: 9px; height: 9px; flex: none; background-color: var(--accent); -webkit-mask: url(icons/dia.svg) center / contain no-repeat; mask: url(icons/dia.svg) center / contain no-repeat; }
+.app[data-mode="loading"] .wordmark { visibility: hidden; }
+
+/* Bones: the portrait is a button (it opens Home). His state is the skull's light; its word (with the tone's
+   dot) shows beside him on hover or keyboard focus, and is the button's name. The pictures keep 5.2% clear on
+   the left, so the margin takes it back: the cranium's ink sits on the icons' column at every size (APP-D-54). */
+.bones-btn {
+  position: relative; display: block; width: max-content; margin: 12px 0 0 calc(var(--rail, 10px) - var(--portrait) * .052); padding: 0; border: 0; border-radius: var(--r-sm); background: none;
+}
+.bones-btn[aria-hidden="true"] { cursor: default; }
+/* Bones is the Dock icon's glass skull on its own (the owner, 2026-10-03: "no circle around it, no rounded
+   square either. just active / inactive version of the skull"; brand/tools/glass-layers.mjs, at 96 and 64 pt,
+   1x and 2x): lit while he's active, unlit otherwise. Both are decoded up front and stacked in one cell; the
+   new one fades in over the old, which stays whole underneath until it's covered, so he never thins mid-swap
+   (APP-D-55). */
+.portrait {
+  position: relative; width: var(--portrait); height: var(--portrait); flex: none; display: grid; place-items: center; transition: transform 80ms ease-out;
+}
+/* Not drawn until the first real paint, which shows him as he is, with no fade (APP-D-61). */
+.app[data-mode="loading"] .portrait { visibility: hidden; }
+.app[data-mode="app"] { --portrait: 64px; }
+.portrait .bones {
+  grid-area: 1 / 1; width: 100%; height: 100%; display: block; opacity: 0;
+  background: center / contain no-repeat; transition: opacity 0s linear 240ms;
+}
+.portrait .bones[data-face="active"] { background-image: image-set(url(img/bones-active.png) 1x, url(img/bones-active@2x.png) 2x); }
+.portrait .bones[data-face="inactive"] { background-image: image-set(url(img/bones-inactive.png) 1x, url(img/bones-inactive@2x.png) 2x); }
+.app[data-mode="app"] .portrait .bones[data-face="active"] { background-image: image-set(url(img/bones-active-64.png) 1x, url(img/bones-active-64@2x.png) 2x); }
+.app[data-mode="app"] .portrait .bones[data-face="inactive"] { background-image: image-set(url(img/bones-inactive-64.png) 1x, url(img/bones-inactive-64@2x.png) 2x); }
+.portrait[data-state="active"] .bones[data-face="active"],
+.portrait[data-state="inactive"] .bones[data-face="inactive"] { opacity: 1; z-index: 1; transition: opacity 240ms ease-out; }
+@media (prefers-reduced-motion: reduce) { .portrait[data-state] .bones[data-face], .portrait { transition: none; } }
+.portrait[data-instant][data-state] .bones[data-face] { transition: none; }
+/* A click cue, not a hover glow (APP-D-56): the hover already shows his word; the press and the release both ease (APP-D-60). */
+.bones-btn:not([aria-hidden="true"]):active .portrait { transform: scale(.96); }
+.status-tip {
+  position: absolute; left: calc(100% + 10px); top: 50%; transform: translateY(-50%); z-index: 2;
+  display: inline-flex; align-items: center; gap: 7px; height: 26px; padding: 0 10px 0 9px; border-radius: var(--r-sm);
+  background: var(--raised); border: 1px solid var(--line); box-shadow: var(--sh-pop);
+  font: 500 12px/16px var(--sans); color: var(--text); white-space: nowrap;
+  opacity: 0; pointer-events: none; transition: opacity 120ms ease-out;
+}
+.status-tip::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--line-strong); }
+.status-tip[data-tone="ok"]::before { background: var(--ok); }
+.status-tip[data-tone="warn"]::before { background: var(--warn); }
+.status-tip[data-tone="needs"]::before { background: var(--needs); }
+.status-tip[data-tone="bad"]::before { background: var(--bad); }
+.status-tip:empty { display: none; }
+.bones-btn:hover .status-tip, .bones-btn:focus-visible .status-tip { opacity: 1; transition-delay: 60ms; }
+
+/* The quest tracker (setup): a status, not navigation. */
+.tracker { list-style: none; margin: 20px 0 auto; padding: 0; }
+.tracker ol { list-style: none; margin: 0; padding: 0; }
+.tracker-row { display: grid; grid-template-columns: 16px 1fr; gap: 10px; align-items: center; padding: 7px 10px; font-size: 14px; line-height: 20px; color: var(--muted); }
+.tracker-mark { width: 16px; height: 16px; }
+.tracker-now { color: var(--text); font-weight: 500; }
+
+/* The nav (after setup): four pages, as a Mac sidebar's rows. */
+.nav { margin-top: 18px; display: flex; flex-direction: column; gap: 1px; }
+.nav-item {
+  display: grid; grid-template-columns: 16px 1fr auto; gap: 10px; align-items: center; text-align: left;
+  height: 32px; padding: 0 10px; border: 0; border-radius: var(--r-sm); background: none;
+  font-size: 14px; color: var(--muted); transition: color var(--tint), background-color var(--tint);
+}
+.nav-item::before { content: ""; width: 16px; height: 16px; background-color: currentColor; -webkit-mask: center / contain no-repeat; mask: center / contain no-repeat; }
+.nav-item[data-nav="home"]::before { -webkit-mask-image: url(icons/home.svg); mask-image: url(icons/home.svg); }
+.nav-item[data-nav="provider"]::before { -webkit-mask-image: url(icons/spark.svg); mask-image: url(icons/spark.svg); }
+.nav-item[data-nav="privacy"]::before { -webkit-mask-image: url(icons/shield.svg); mask-image: url(icons/shield.svg); }
+.nav-item[data-nav="settings"]::before { -webkit-mask-image: url(icons/gear.svg); mask-image: url(icons/gear.svg); }
+.nav-item[data-nav="setup-now"]::before { -webkit-mask-image: url(icons/dia-now.svg); mask-image: url(icons/dia-now.svg); color: var(--accent); }
+.nav-item:hover { color: var(--text); background: var(--tint-1); }
+.nav-item[aria-current="page"] { background: var(--tint-2); color: var(--text); font-weight: 500; }
+.nav-item[aria-current="page"]::before { background-color: var(--accent); }
+.nav-item[data-attention="true"]::after { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--needs); }
+.nav-setup-now { color: var(--text); background: var(--accent-soft); margin-bottom: 6px; }
+.nav-setup-now:hover { background: #45341e; }
+.nav-marks { display: inline-flex; gap: 3px; }
+.nav-mark { width: 10px; height: 10px; }
+
+/* The foot: the version and one small update action, on the panel's floor. */
+.side-foot {
+  margin: auto -14px 0; height: 40px; flex: none; padding: 0 18px 0 24px; border-top: 1px solid var(--hair);
+  display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; line-height: 16px;
+}
+.app[data-mode="setup"] .side-foot { margin-top: 0; }
+.app[data-mode="loading"] .side-foot { visibility: hidden; }
+.foot-ver { font: 500 12px/16px var(--mono); color: var(--muted); letter-spacing: -.01em; }
+.foot-note { color: var(--muted); white-space: nowrap; }
+.foot-btn {
+  display: inline-flex; align-items: center; gap: 5px; height: 26px; margin-right: -6px; padding: 0 6px; border: 0; border-radius: var(--r-sm); background: none;
+  font-size: 12px; line-height: 16px; color: var(--muted); white-space: nowrap; transition: color var(--tint), background-color var(--tint);
+}
+.foot-btn:hover { color: var(--text); background: var(--tint-1); }
+.foot-btn[aria-disabled="true"] { cursor: default; }
+.foot-btn[aria-disabled="true"]:hover { color: var(--muted); background: none; }
+.foot-btn .ico-after { width: 11px !important; height: 11px !important; }
+.foot-accent { color: var(--accent); }
+.foot-accent:hover { color: var(--accent-hover); }
+
+/* ---------------------------------------------------------------------------
+   The stage: the title strip's top bar, then the one column. */
+.stage { position: relative; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.topbar { height: var(--title-h); flex: none; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; -webkit-app-region: drag; }
+/* With a sheet open the top bar drags nothing: the sheet's × sits in that strip, and on a Mac a
+   drag region swallows a click on whatever is drawn over it. The bar holds no controls of its own:
+   Back is the title row's, Finish later the panel foot's. */
+.app[data-sheet] .topbar { -webkit-app-region: no-drag; }
+.topbar button { -webkit-app-region: no-drag; }
+.main-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.banners { flex: none; display: flex; flex-direction: column; gap: 8px; padding: 0 var(--gutter); }
+.banners:empty { display: none; }
+.banners > * { max-width: 600px; width: 100%; }
+.banners > :last-child { margin-bottom: 16px; }
+.page { flex: 1; min-height: 0; overflow: auto; display: flex; flex-direction: column; padding: 4px var(--gutter) 40px; scrollbar-gutter: stable; }
+.col { width: 100%; max-width: var(--col); flex: none; }
+.page[data-page="setup"] { padding-bottom: 32px; }
+.page[data-page="setup"] .col { margin-top: 0; }
+.page[data-page="setup"] .col.setup-welcome { margin-block: auto; }
+
+h1 { font: 500 26px/32px var(--sans); letter-spacing: 0; color: var(--text); }
+/* SF Display tracks its titles itself; Inter's titles keep their tightening. */
+.app:not([data-os="darwin"]) h1 { letter-spacing: -0.022em; }
+.lead { margin-top: 6px; font-size: 14px; line-height: 20px; color: var(--muted); }
+.empty { margin-top: 20px; color: var(--muted); }
+/* Small sans caps for labels and group titles (CL-design-19); mono caps are the flourish's alone. */
+.label { font: 500 13px/18px var(--sans); color: var(--muted); }
+/* Every title sits on one line whatever its row holds (APP-D-39): the row starts at the title's top, a
+   34 px icon box centres on the title's 32 px line, and a button (Pause) on the same line. */
+.title-row { display: flex; align-items: flex-start; gap: 12px; }
+.title-row .btn-ghost { margin-top: -1px; }
+.title-row > .btn:not(.btn-ghost) { margin-top: 2px; }
+.title-row h1 { flex: 1; min-width: 0; }
+
+/* ---------------------------------------------------------------------------
+   Buttons: one gold primary per screen; quiet; ghost; link. Hover tints only. */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 34px; padding: 0 14px;
+  border-radius: var(--r-md); border: 1px solid var(--line); background: var(--surface); color: var(--text);
+  font-size: 14px; font-weight: 500; white-space: nowrap; line-height: 20px;
+  transition: background-color var(--tint), border-color var(--tint), color var(--tint);
+}
+.btn .ico { width: 16px; height: 16px; color: var(--muted); }
+.btn:hover { background: var(--raised); }
+.btn:active { background: var(--sunk); }
+.btn-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); padding: 0 14px 0 16px; }
+.btn-primary .ico { color: var(--accent-ink); }
+.btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+.btn-primary:active { background: var(--accent-hover); filter: brightness(.92); }
+.btn kbd { display: inline-grid; place-items: center; min-width: 22px; height: 20px; margin-right: -6px; padding: 0 5px; border-radius: 5px; font: 500 12px/16px var(--sans); background: rgba(28, 20, 7, .16); color: inherit; }
+.btn-quiet kbd { background: var(--tint-2); color: var(--muted); }
+.btn-sm { height: 28px; padding: 0 10px; font-size: 13px; border-radius: var(--r-sm); }
+.btn-primary.btn-sm { padding: 0 12px; }
+.btn[aria-disabled="true"] { opacity: .55; cursor: default; box-shadow: none; }
+.btn[aria-busy="true"] { opacity: 1; }
+.btn[aria-busy="true"]::before { content: ""; width: 14px; height: 14px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; flex: none; }
+.btn-danger, .btn-danger .btn-label { color: var(--bad); }
+.btn-ghost {
+  display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 10px; border: 0; border-radius: var(--r-sm);
+  background: none; color: var(--muted); font-size: 14px; line-height: 20px; white-space: nowrap; transition: color var(--tint);
+}
+.btn-ghost:hover { color: var(--text); }
+.btn-ghost .ico { width: 16px; height: 16px; }
+.btn-ghost[aria-expanded="true"] { color: var(--text); }
+/* A disclosure's chevron turns down while it's open (Show raw request, Show all models). */
+.btn-ghost[aria-expanded="true"] > .ico-chevron { transform: rotate(90deg); }
+.btn-icon { width: 34px; justify-content: center; padding: 0; }
+.btn-link {
+  display: inline-flex; align-items: center; gap: 4px; padding: 0; border: 0; background: none; color: var(--accent);
+  font-size: 14px; line-height: 20px; text-decoration: none; text-decoration-thickness: 1px; text-underline-offset: 3px;
+  transition: color var(--tint);
+}
+.btn-link:hover { color: var(--accent-hover); text-decoration: underline; }
+.btn-link .ico { width: 12px; height: 12px; }
+.ico-after { width: 14px !important; height: 14px !important; }
+
+.row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.row-end { justify-content: flex-end; }
+.actions { margin-top: 28px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+/* No button to show (a region the AI doesn't serve: the rows are the next step): no empty band. */
+.actions:empty { display: none; }
+.actions-quiet { margin-top: 16px; }
+/* A disclosure outside a card starts on the content edge, its padding pulled out (Show raw request). */
+.actions-quiet > .btn-ghost:first-child { margin-left: -14px; }
+.push { margin-left: auto; }
+
+/* Chips: always a word. */
+.chip { display: inline-flex; align-items: center; gap: 5px; height: 20px; padding: 0 8px; border-radius: 999px; font-size: 12px; line-height: 16px; font-weight: 500; white-space: nowrap; background: var(--sunk); color: var(--muted); vertical-align: 1px; }
+.chip-ok { color: var(--ok); background: var(--ok-soft); }
+.chip-warn { color: var(--warn); background: var(--warn-soft); }
+.chip-bad { color: var(--bad); background: var(--bad-soft); }
+.chip-accent { color: var(--accent); background: var(--accent-soft); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chips .chip { height: 24px; padding: 0 10px; font-size: 14px; color: var(--text); background: var(--raised); }
+
+/* ---------------------------------------------------------------------------
+   Step 2: the AI rows (a radio group), the actions, the result line. */
+.pick-head { display: flex; flex-direction: column; }
+/* Step 2's line keeps its slot when it has nothing to say: the rows never move (CL-design-51). */
+.lead-slot:empty::before { content: "\00a0"; }
+.choices-wrap { margin-top: 20px; }
+/* Step 2's AIs: one list, as a launcher's results are; the pick is a flat warm row with a gold dot. */
+.choices { display: flex; flex-direction: column; gap: 2px; }
+.choices:not(.models) { padding: 5px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); }
+.choice {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto 14px; gap: 12px; align-items: center; height: 40px; padding: 0 12px;
+  background: none; border: 0; border-radius: 7px; text-align: left;
+  transition: background-color var(--tint);
+}
+.choice:hover { background: var(--tint-1); }
+.choice-tick { width: 14px; height: 14px; color: var(--accent); visibility: hidden; }
+.choice[aria-checked="true"] .choice-tick { visibility: visible; }
+.choice-name { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.choice-names { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.choice-title { font-size: 14px; line-height: 20px; font-weight: 500; }
+/* Your AI's models: rows straight in the card with hairlines, as Settings' rows (CL-design-39); the
+   pick keeps its accent outline. A name stays on one line, its one chip beside it. */
+.set-models { border-top: 1px solid var(--hair); }
+.group-rows > .set-models:first-child { border-top: 0; }
+.models { gap: 0; }
+.choice-model { height: 52px; padding: 0 18px; background: none; border: 0; border-top: 1px solid var(--hair); border-radius: 0; box-shadow: none; }
+.models > .choice-model:first-child { border-top-color: transparent; }
+.choice-model:hover { background: var(--tint-1); }
+.models .choice-model[aria-checked="true"] { position: relative; background: var(--tint-2); border-top-color: transparent; border-radius: 7px; }
+.models .choice-model[aria-checked="true"] + .choice-model { border-top-color: transparent; }
+/* The pick's outline sits inside the card, its words where the other rows' are. */
+.models .choice-model[aria-checked="true"] { margin: 0 8px; padding-left: 10px; padding-right: 10px; }
+.choice-model .choice-name { gap: 8px; }
+.choice-model .choice-title { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.choice-model .chip { flex: none; }
+.models-more { padding: 6px 12px 10px; border-top: 1px solid var(--hair); }
+.models-line { padding: 0 18px 12px; }
+.set-bare-row { grid-template-columns: minmax(0, 1fr); }
+.key-main > .key-mask { white-space: nowrap; overflow-wrap: normal; }
+.choice-cost { font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.choice[aria-checked="true"], .choice[aria-checked="true"]:hover { background: var(--tint-2); }
+.choice[aria-checked="true"] .choice-cost { color: var(--text); }
+
+.result-slot { margin-top: 12px; min-height: 22px; }
+.result { display: flex; align-items: flex-start; gap: 8px; font-size: 14px; line-height: 20px; color: var(--text); }
+.result-ico { width: 16px; height: 16px; margin-top: 2px; }
+.result-ok .result-ico { color: var(--ok); }
+.result-warn .result-ico { color: var(--warn); }
+.result-bad .result-ico { color: var(--bad); }
+.result-info .result-ico { color: var(--muted); }
+.result-box { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+.result-sub { color: var(--muted); font-size: 14px; line-height: 20px; padding-left: 24px; }
+
+/* Other's form. */
+.fields { margin-top: 24px; display: flex; flex-direction: column; gap: 12px; }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label { font-size: 14px; color: var(--muted); }
+.field-inline { margin-top: 16px; flex-direction: row; align-items: center; gap: 12px; }
+.input, .select, .money-in {
+  height: 40px; padding: 0 12px; border-radius: var(--r-md); border: 1px solid var(--line-strong); background: var(--sunk); color: var(--text);
+  font-size: 14px; min-width: 0; transition: border-color var(--tint);
+}
+.input::placeholder, .money-in::placeholder { color: var(--muted); opacity: .75; }
+.key-input { font-family: var(--mono); font-size: 14px; }
+.select { height: 36px; padding: 0 32px 0 12px; font-size: 14px; max-width: 100%; }
+/* The caret is drawn, not the system's (which sat on the right edge): its stroke ends 12 px from the
+   edge, as the words start 12 px from the other. Keyboard, its name and value and the open list stay
+   the system's. */
+.select { -webkit-appearance: none; appearance: none; background-image: url(icons/caret-down.svg); background-repeat: no-repeat; background-position: right 8px center; background-size: 16px 16px; }
+.custom-form .actions { margin-top: 22px; }
+
+/* ---------------------------------------------------------------------------
+   Step 3: the objectives. */
+.say-head { display: flex; align-items: flex-start; gap: 12px; }
+.say-head h1 { flex: 1; min-width: 0; }
+.say-head .btn-ghost { margin-top: -1px; }
+/* Show details, the info icon beside a title: a control at rest (a surface and a hairline), ending on
+   the cards' right edge (CL-design-47, CL-design-56). Hover tints it. */
+.title-row > .btn-icon:last-child, .say-head > .btn-icon:last-child, .title-row > .btn-back, .say-head > .btn-back { color: var(--text); background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); }
+.title-row > .btn-icon:hover, .say-head > .btn-icon:hover { background: var(--raised); }
+/* Back heads its title row on the column's left edge (Show details ends it on the right); the line
+   under the title starts where the title does (APP-D-37). */
+.title-row > .btn-back, .say-head > .btn-back { flex: none; }
+.title-row:has(> .btn-back) + .lead, .say-head:has(> .btn-back) + .lead { padding-left: 46px; }
+.say-head:has(> .btn-back) + .say-passed { padding-left: 46px; } /* the connected line starts where the title does (OB-13) */
+.say-grid { margin-top: 24px; }
+.objs { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.obj { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 14px; align-items: start; padding: 14px 16px; border-radius: var(--r-lg); border: 1px solid transparent; }
+.obj-mark { width: 20px; height: 20px; margin-top: 1px; }
+.obj-title { font-size: 16px; line-height: 22px; font-weight: 500; }
+.obj-done .obj-title, .obj-skipped .obj-title, .obj-next .obj-title { color: var(--muted); font-weight: 400; }
+.obj-meta { margin-top: 4px; font-size: 14px; line-height: 20px; color: var(--muted); }
+.obj-steps { margin-bottom: 0; padding-left: 0; list-style: decimal inside; }
+.obj-steps li + li { margin-top: 2px; }
+.obj-note > .obj-steps { margin: 0; }
+[data-fk="no-reading"] { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.result-slot:empty:has(+ #no-key-box) { display: none; }
+.obj-now, .obj-error { background: var(--surface); border-color: rgba(227, 164, 88, .4); }
+.obj-error { border-color: rgba(232, 195, 90, .5); }
+.obj-wait { border-color: var(--line); }
+.obj-actions { margin-top: 12px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.obj-actions .btn:not(.btn-sm) { height: 34px; font-size: 14px; padding: 0 14px; }
+.obj-actions .btn-primary:not(.btn-sm) { padding: 0 16px; }
+/* One height for everything in a row of actions: the command, its Copy and the buttons (the owner, 2026-10-05). */
+.obj-actions .cmd { display: inline-flex; align-items: center; height: 34px; padding: 0 12px; box-sizing: border-box; }
+.obj-actions .cmd-row .btn-sm { height: 34px; padding: 0 12px; font-size: 14px; }
+/* A ghost link that starts a row lines up with the text above it. */
+.obj-actions > .btn-ghost:first-child { margin-left: -10px; }
+.obj-note { margin-top: 10px; padding: 10px 12px; border-radius: var(--r-md); background: var(--sunk); border: 1px solid var(--line); display: flex; flex-direction: column; gap: 8px; }
+.obj-note > .btn { align-self: flex-start; } /* an action under its line, its own width (Turn off screen reading) */
+.obj-skipped .obj-mark { color: var(--muted); } /* skipped, not done: Screen Recording with screen reading off (APP-D-51) */
+.obj-sub { margin-top: 8px; color: var(--muted); }
+.objs-foot { display: flex; padding: 2px 6px; }
+.cmd-row { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; max-width: 100%; }
+.cmd { font: 500 14px/18px var(--mono); color: var(--accent); background: var(--sunk); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 8px 12px; white-space: nowrap; }
+.cmd-sm { font-size: 12px; padding: 2px 8px; }
+.listen { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: var(--muted); }
+.listen-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+.say-passed { margin-top: 12px; }
+
+/* The welcome's picture (the route on a map): one still, big enough to read; nothing steps through
+   frames on a timer. */
+.ingame { position: relative; margin: 0; width: 236px; aspect-ratio: 432 / 479; }
+.ingame-frame { display: block; width: 100%; height: auto; }
+@media (prefers-reduced-motion: no-preference) {
+  .btn[aria-busy="true"]::before { animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .listen-dot { animation: breathe 2.4s ease-in-out infinite; }
+  @keyframes breathe { 50% { opacity: .4; } }
+  /* Not while the window is away from the player (app.js markAway): nothing left for the compositor to draw. */
+  [data-away] .listen-dot { animation: none; }
+  .sheet { animation: sheet-in 200ms ease-out; }
+  .scrim { animation: fade-in 200ms ease-out; }
+  @keyframes sheet-in { from { transform: translateX(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+  @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+}
+
+/* You're set. */
+.done-sub { margin-top: 6px; }
+
+/* The welcome: what Bones does, beside his window in WoW; one primary. */
+.welcome { display: grid; grid-template-columns: minmax(0, 1fr) 272px; gap: 28px; align-items: start; }
+.welcome .ingame { width: 272px; }
+/* The route on the map: the welcome's hero (an illustration of what Bones draws). */
+.mapfig { aspect-ratio: 480 / 440; }
+.mapfig .ingame-frame { border-radius: var(--r-lg); }
+.welcome .actions { margin-top: 20px; }
+.welcome-ai { margin-top: 4px; }
+
+/* The picture of where your data goes. */
+.flow-arrow { position: relative; height: 2px; background: var(--accent); border-radius: 1px; }
+.flow-arrow i { position: absolute; right: 1px; top: -4px; width: 8px; height: 8px; border-top: 2px solid var(--accent); border-right: 2px solid var(--accent); transform: rotate(45deg); }
+/* NeverQuestAlone sits apart under Your Mac, muted, with no line to the arrow: it's off the path (CL-design-40). */
+/* NeverQuestAlone: a quiet node that gets nothing (CL-design-24), never an error's red strike. */
+
+/* ---------------------------------------------------------------------------
+   Home: the alert, the stats, the last request. */
+.alert {
+  margin-top: 24px; display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 14px; padding: 18px 20px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg);
+}
+.alert-warn { border-color: rgba(232, 195, 90, .42); }
+.alert-bad { border-color: rgba(242, 131, 122, .42); }
+.alert-ico { width: 22px; height: 22px; }
+.alert-warn .alert-ico { color: var(--warn); }
+.alert-bad .alert-ico { color: var(--bad); }
+.alert-head { font-size: 16px; line-height: 22px; font-weight: 500; }
+.alert-sub { margin-top: 4px; font-size: 14px; line-height: 20px; color: var(--muted); }
+.alert .row { margin-top: 14px; }
+.alert .btn:not(.btn-primary) { height: 34px; font-size: 14px; }
+.alert .btn-primary { height: 34px; font-size: 14px; }
+.alert-out { margin-top: 12px; }
+.xp { margin-top: 8px; display: grid; grid-template-columns: repeat(10, 1fr); gap: 3px; }
+.xp i { display: block; height: 4px; border-radius: 2px; background: var(--line); }
+.xp-ok i.on { background: var(--accent); }
+.xp-warn i.on { background: var(--warn); }
+.xp-bad i.on { background: var(--bad); }
+
+/* Home's route card: his one line, and the route's next stop while he has one. */
+.route { margin-top: 20px; display: grid; grid-template-columns: minmax(0, 1fr) 208px; gap: 20px; align-items: center; padding: 18px 18px 18px 20px; border-radius: var(--r-lg); background: var(--surface); border: 1px solid var(--line); }
+.route-solo { grid-template-columns: minmax(0, 1fr); }
+/* No route yet (WoW closed, a first run): no card, its one button under the title. */
+.route-bare .actions { margin-top: 20px; }
+.route-bare + .aistrip { margin-top: 20px; }
+.route-title { display: flex; align-items: baseline; gap: 10px; font-size: 16px; line-height: 22px; font-weight: 500; }
+.route-dia { width: 10px; height: 10px; color: var(--accent); flex: none; }
+.proof-ico { width: 18px; height: 18px; color: var(--accent); }
+.route-title:not(.sr-only) + .route-live { margin-top: 14px; }
+.route-live { margin-top: 0; display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 10px; align-items: start; }
+.route-live > .proof-ico { margin-top: 1px; }
+.route-live-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.route-live-key { color: var(--muted); }
+.route-live-stop { font-size: 16px; line-height: 22px; font-weight: 500; color: var(--text); overflow-wrap: anywhere; }
+.route-live-key, .route-live-sub { font-size: 13px; line-height: 18px; }
+.route-live-sub { color: var(--muted); }
+.route .actions { margin-top: 18px; }
+.aistrip {
+  width: 100%; margin-top: 12px; display: flex; align-items: center; gap: 10px; padding: 0 16px; min-height: 48px; flex-wrap: wrap;
+  border-radius: var(--r-lg); border: 1px solid var(--line); background: var(--surface); color: var(--muted); font-size: 14px; text-align: left;
+  transition: background-color var(--tint);
+}
+.aistrip:hover { background: var(--tint-1); }
+.aistrip-ico, .aistrip-go { width: 16px; height: 16px; }
+.aistrip-model { color: var(--text); font-weight: 500; }
+.aistrip-go { margin-left: auto; }
+.aistrip .xp { margin-top: 0; width: 80px; }
+.mini-track { display: inline-flex; gap: 4px; margin-left: 6px; }
+.mini-track .nav-mark { width: 14px; height: 14px; }
+
+/* Banners and notices: one line at the top of the stage column. */
+.banner, .notice {
+  display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 6px 8px 6px 14px; flex-wrap: wrap;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg);
+}
+.page .banner, .page .notice { margin-bottom: 16px; }
+.banner-warn { border-color: rgba(232, 195, 90, .38); }
+.banner-bad { border-color: rgba(242, 131, 122, .38); }
+.banner-ico, .notice-ico { width: 18px; height: 18px; flex: none; color: var(--muted); }
+.banner-warn .banner-ico, .notice-warn .notice-ico { color: var(--warn); }
+.banner-bad .banner-ico, .notice-bad .notice-ico { color: var(--bad); }
+.notice-ok .notice-ico { color: var(--ok); }
+.banner-text, .notice-text { flex: 1; min-width: 180px; font-size: 14px; line-height: 20px; }
+.notice-acts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+/* A notice with a choice: its words, then its actions under them, lined up with the words. */
+.notice-stack { align-items: flex-start; padding: 12px 14px; }
+.notice-stack .notice-ico { margin-top: 1px; }
+.notice-stack .notice-text { flex-basis: calc(100% - 30px); min-width: 0; }
+.notice-stack .notice-acts { margin-left: 30px; }
+.banner-link { padding: 0; border: 0; background: none; text-align: left; color: var(--text); transition: color var(--tint); }
+.banner-link:hover { color: var(--accent-hover); }
+.banner-out { flex-basis: 100%; padding: 0 0 4px 30px; }
+
+/* ---------------------------------------------------------------------------
+   Settings groups and rows (Your AI, Usage, Settings). */
+.group { margin-top: 20px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); }
+h1 + .group, .lead + .group { margin-top: 24px; }
+/* A group of rows is a launcher's section: its name above, quiet and in sentence case; the rows in
+   one flat card. A padded group (About, Diagnostics) keeps its name inside. */
+.group:has(> .group-rows) { background: none; border: 0; border-radius: 0; }
+.group > .group-rows { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); }
+.group-title { padding: 0 2px 8px; font: 500 13px/18px var(--sans); color: var(--muted); }
+.group-head { display: flex; align-items: center; justify-content: space-between; padding: 0 0 4px; }
+.group-head > .group-title { padding: 0 2px; }
+.group-head > :not(.group-title):last-child { margin-right: -6px; }
+.group-rows { display: flex; flex-direction: column; }
+.group-pad { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.group-pad > .group-title { padding: 0; }
+.group-pad h3 { font-size: 14px; margin-top: 6px; }
+.set {
+  display: grid; grid-template-columns: 136px minmax(0, 1fr) auto; gap: 16px; align-items: center; padding: 11px 16px; min-height: 50px;
+  border-top: 1px solid var(--hair); text-align: left;
+}
+.group-rows > .set:first-child { border-top: 0; }
+.set-key { font-size: 14px; line-height: 20px; color: var(--text); }
+.set-value { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.set-main { font-size: 14px; line-height: 20px; font-weight: 500; display: inline-flex; align-items: center; gap: 4px 10px; min-width: 0; flex-wrap: wrap; }
+.set-main > .mono, .set-main > [data-count] { overflow-wrap: anywhere; min-width: 0; }
+.set-sub { font-size: 13px; line-height: 18px; color: var(--muted); }
+.set-text { font-size: 14px; line-height: 20px; }
+/* Read-only records (Connection, Spending, Last request): a muted label over its value, one weight for
+   every value (CL-design-44). Settings' rows are titles and keep the primary colour. */
+.set-rec .set-key { font-size: 13px; line-height: 18px; color: var(--muted); }
+.set-rec .set-main, .set-rec .set-text { font-size: 14px; line-height: 20px; color: var(--text); }
+/* Trailing controls share one right edge (CL-design-45): a ghost's words and a chevron's stroke end
+   where a switch or a button ends. */
+.set-control > .btn-ghost:last-child { margin-right: -10px; }
+.set-link .set-control > .ico-chevron { margin-right: -5px; }
+.set-control { display: flex; align-items: center; gap: 8px; justify-content: flex-end; flex-wrap: wrap; min-width: 0; }
+/* A row whose words stack (CL-design-25): label and one line on the left, the control at the right edge. */
+.set.set-stack { grid-template-columns: minmax(0, 1fr) auto; }
+.set-stack > .set-value { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 8px; row-gap: 2px; align-items: center; }
+.set-stack > .set-value > * { grid-column: 1 / -1; }
+.set-stack > .set-value > .set-key { grid-column: 1; }
+.set-stack .obj-note { grid-column: 1 / -1; }
+.set-below { grid-column: 1 / -1; min-width: 0; }
+.set-below > .obj-note { margin-top: -4px; }
+.set-seg { grid-template-columns: 140px minmax(0, 1fr); }
+.set-block { padding: 12px 14px 14px; border-top: 1px solid var(--hair); }
+.group-rows > .set-block:first-child { border-top: 0; }
+/* Thinking, inside the Model card (CL-design-55): a muted label over its track, on the rows' inset. */
+#effort-row { padding: 12px 16px 14px; }
+#effort-row > .set-key { display: block; margin-bottom: 8px; font-size: 14px; line-height: 20px; color: var(--muted); }
+/* A row's actions are quiet text, as a launcher's are (the one primary keeps its fill). */
+.set .set-control .btn-quiet.btn-sm, .set-rec .row > .btn-quiet.btn-sm { height: 28px; padding: 0 8px; background: none; border-color: transparent; color: var(--text); font-weight: 500; }
+.set .set-control .btn-quiet.btn-sm:hover, .set-rec .row > .btn-quiet.btn-sm:hover { background: var(--tint-1); color: var(--text); }
+.set-rec .row > .btn-danger, .set-rec .row > .btn-danger .btn-label { color: var(--bad); }
+.set-rec .row { gap: 2px; }
+.set-control > .btn-sm:last-child, .set-control > .row > .btn-sm:last-child, .set-rec .row > .btn-sm:last-child { margin-right: -8px; }
+/* A row's button whose fold is open (Pick a model, Replace key) reads pressed. */
+.set-control .btn-quiet[aria-expanded="true"] { background: var(--tint-2); color: var(--text); }
+.set-tall { align-items: start; }
+.set-tall > .set-control { padding-top: 2px; }
+.set-link { width: 100%; border: 0; border-top: 1px solid var(--hair); background: none; color: inherit; font: inherit; transition: background-color var(--tint); }
+.group-rows > .set-link:first-child { border-top: 0; border-radius: 11px 11px 0 0; }
+.group-rows > .set-link:last-child { border-radius: 0 0 11px 11px; }
+.group-rows > .set-link:only-child { border-radius: 11px; }
+.set-link:hover { background: var(--tint-1); }
+.set-link .ico { width: 16px; height: 16px; color: var(--muted); }
+.set-link-danger .set-key, .set-link-danger .ico { color: var(--bad); }
+.set-danger { grid-template-columns: 1fr; justify-items: start; }
+.set-bare { padding: 4px 0; border: 0; grid-template-columns: minmax(0, 1fr) auto; min-height: 40px; }
+/* A switch row in a card under its words (About's update checks, Uninstall's addon): hairlined, as a row (CL-design-58). */
+.group-pad > .set-bare { border-top: 1px solid var(--hair); margin-top: 4px; padding-top: 12px; }
+.set-key-wide { color: var(--text); }
+.set-ico { width: 16px; height: 16px; color: var(--bad); }
+.xlist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.xlist li { display: flex; align-items: center; gap: 10px; font-size: 14px; line-height: 20px; }
+.set-line { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 4px; font-size: 14px; line-height: 20px; color: var(--muted); }
+.set-line-ico { width: 14px; height: 14px; }
+.set-line-ok { color: var(--ok); }
+.set-line-ok .set-line-ico { color: var(--ok); }
+.set-line-warn .set-line-ico { color: var(--warn); }
+.set-line-bad .set-line-ico { color: var(--bad); }
+.set-line .btn-sm { height: 30px; font-size: 14px; }
+.replace { margin-top: 10px; padding: 12px; border-radius: var(--r-md); background: var(--sunk); border: 1px solid var(--line); display: flex; flex-direction: column; gap: 10px; }
+.replace-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.replace-row .input { flex: 1 1 160px; min-width: 0; height: 36px; }
+/* A long busy label ("Checking with Anthropic…") wraps inside its button, never past the row (CL-design-30). */
+.replace-row .btn { max-width: 100%; white-space: normal; height: auto; min-height: 36px; padding-top: 6px; padding-bottom: 6px; text-align: left; }
+
+/* Segmented options: a name and, where one helps, a hint. */
+.seg { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 6px; }
+.opt {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 1px; text-align: left; padding: 9px 12px;
+  background: var(--sunk); border: 1px solid var(--line); border-radius: var(--r-md); transition: background-color var(--tint), border-color var(--tint);
+}
+.opt:hover { background: var(--raised); }
+/* One-line segments (Thinking, Last request's chats): one sunk track with a raised thumb on the pick (CL-design-29). */
+/* One row always (CL-design-35): segments shrink to their words; the pick is a raised thumb with an
+   accent edge and accent words (CL-design-38). */
+.seg-row { display: flex; flex-wrap: nowrap; gap: 2px; padding: 3px; background: var(--sunk); border: 1px solid var(--line); border-radius: var(--r-md); }
+.seg-row .opt { flex: 1 1 auto; min-width: 0; align-items: center; justify-content: center; min-height: 30px; padding: 5px 10px; background: none; border: 0; border-radius: var(--r-sm); color: var(--muted); }
+.seg-row .opt:hover { background: none; color: var(--text); }
+.seg-row .opt .opt-name { white-space: nowrap; }
+.seg-row .opt[aria-checked="true"] { background: var(--raised); color: var(--text); box-shadow: 0 1px 2px rgba(0, 0, 0, .4); }
+.seg-note { margin-top: 8px; }
+.opt-name { font-size: 14px; line-height: 20px; font-weight: 500; }
+.opt-hint { font-size: 14px; line-height: 20px; color: var(--muted); }
+.opt[aria-checked="true"] { border-color: var(--line); background: var(--tint-2); }
+
+/* Switch (spec §4.18): the knob moves only on a click. */
+/* The off track is the quietest grey that keeps 3:1 against its card (§14; the probes check it). */
+.switch { position: relative; width: 34px; height: 20px; flex: none; border-radius: 999px; border: 0; padding: 0; background: #67636f; transition: background-color var(--tint); }
+.switch-knob { position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #f4f2ee; transition: transform var(--tint), background-color var(--tint); }
+.switch[aria-checked="true"] { background: var(--accent); }
+.switch[aria-checked="true"] .switch-knob { transform: translateX(14px); background: #fff8ee; }
+.switch[aria-disabled="true"] { opacity: .5; cursor: default; }
+
+/* The daily limit's amount. */
+.money-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.money { display: inline-flex; align-items: center; height: 34px; border-radius: var(--r-md); border: 1px solid var(--line-strong); background: var(--sunk); padding-left: 10px; }
+.money-bad { border-color: var(--bad); }
+.money-sign { color: var(--muted); }
+.money-in { width: 88px; height: 32px; border: 0; background: none; padding: 0 8px 0 4px; font-variant-numeric: tabular-nums; }
+.money-in:focus-visible { outline: none; }
+.money:focus-within { outline: 2px solid var(--focus); outline-offset: 2px; }
+.money-in::-webkit-outer-spin-button, .money-in::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+/* Connections: one row per address. */
+.hosts { list-style: none; margin: 24px 0 0; padding: 0; }
+/* A flex row (CL-design-48): a row with no Refused chip leaves no empty column, so its count and time end on the content edge. */
+.host { display: flex; gap: 14px; align-items: center; padding: 12px 18px; border-top: 1px solid var(--hair); }
+.host:first-child { border-top: 0; }
+.host-main { display: flex; flex-direction: column; flex: 1 1 auto; min-width: 0; }
+.host-name { color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.host-sub { font-size: 14px; line-height: 20px; color: var(--muted); }
+.host-count, .host-last { font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* Last request: the JSON, scrolling inside itself. */
+.json { margin-top: 20px; display: flex; flex-direction: column; gap: 8px; }
+.json-meta { font-size: 14px; color: var(--muted); }
+.code { margin: 0; padding: 14px 16px; border-radius: var(--r-lg); background: var(--sunk); border: 1px solid var(--line); font: 500 12px/18px var(--mono); color: var(--text); white-space: pre-wrap; word-break: break-word; overflow: auto; max-height: 360px; }
+.page-last .code { max-height: 360px; min-height: 120px; }
+.kv { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 8px 16px; margin: 0; font-size: 14px; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.table { width: 100%; border-collapse: collapse; font-size: 14px; line-height: 20px; }
+.table th, .table td { text-align: left; padding: 6px 8px 6px 0; border-top: 1px solid var(--hair); vertical-align: top; }
+.table th { color: var(--muted); font-weight: 500; border-top: 0; }
+.table .r { text-align: right; font-variant-numeric: tabular-nums; }
+.perm { display: flex; flex-direction: column; gap: 8px; }
+.copied { display: flex; flex-direction: column; gap: 6px; }
+
+/* ---------------------------------------------------------------------------
+   The Details sheet: over the stage only, never over Bones. */
+.sheet-host { position: absolute; inset: 0; pointer-events: none; z-index: 20; }
+.sheet-host:empty { display: none; }
+/* On a Mac the top bar is the window's drag strip, and a drag region wins over whatever is drawn on
+   top of it: without this, a click on the sheet's × (inside the strip) drags the window instead. */
+.sheet-host > * { -webkit-app-region: no-drag; }
+.scrim { position: absolute; inset: 0; background: var(--scrim); pointer-events: auto; }
+.sheet {
+  position: absolute; top: 0; right: 0; bottom: 0; width: min(384px, 88%); display: flex; flex-direction: column; pointer-events: auto;
+  background: var(--surface); border-left: 1px solid var(--line); box-shadow: -28px 0 60px rgba(0, 0, 0, .45);
+}
+.sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 14px 10px 24px; }
+.sheet-head h2 { font-size: 16px; line-height: 22px; }
+.sheet-body { flex: 1; min-height: 0; overflow: auto; padding: 4px 24px 24px; }
+.sheet-sec { padding: 10px 0 12px; display: flex; flex-direction: column; gap: 4px; }
+.sheet-sec:first-child { padding-top: 4px; }
+.sheet-sec p { font-size: 13px; line-height: 19px; }
+.sheet .label { font: 500 12px/16px var(--sans); color: var(--muted); }
+.sheet-sec .row { margin-top: 2px; }
+.sheet-fine .fine { font-size: 12px; line-height: 18px; color: var(--muted); }
+.sheet-sec .table { font-size: 12px; }
+/* The data sheet's cards (the owner, 2026-10-03: "more well organized"): each part one card of rows
+   under its label, as the pages' groups are, a shade up from the sheet. A row: an icon and its words,
+   or a muted key over its value; the company's policy is the card's last row. */
+.sheet-card { margin-top: 4px; background: rgba(255, 255, 255, .03); border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden; }
+.sheet-row { display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border-top: 1px solid var(--hair); }
+.sheet-row:first-child { border-top: 0; }
+.sheet-row-ico { width: 16px; height: 16px; flex: none; margin-top: 2px; color: var(--muted); }
+.sheet-row-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.sheet-row-key { font-size: 12px; line-height: 16px; color: var(--muted); }
+.sheet-row-val { margin: 0; font-size: 13px; line-height: 19px; color: var(--text); }
+.sheet-row-val, .sheet-sec p, .obj-meta { text-wrap: pretty; }
+.sheet-row-quiet .sheet-row-val { color: var(--muted); }
+.sheet-row-off .sheet-row-val { color: var(--muted); font-weight: 500; }
+.sheet-flow { display: grid; grid-template-columns: auto minmax(24px, 1fr) auto; align-items: center; gap: 10px; }
+.sheet-flow-end { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.sheet-flow-end .sheet-row-ico { margin-top: 0; }
+.sheet-flow-end > .sheet-row-val, .sheet-flow-to .sheet-row-val { font-weight: 500; white-space: nowrap; }
+.sheet-flow-to .sheet-row-ico { color: var(--accent); }
+.sheet-flow-to .sheet-row-key { white-space: nowrap; }
+/* A narrow sheet (the smallest window at the largest zoom): the picture's ends stack and their names wrap (APP-D-45). */
+@media (max-width: 620px) {
+  .sheet-flow { grid-template-columns: minmax(0, 1fr); }
+  .sheet-flow .flow-arrow { display: none; }
+  .sheet-flow-end > .sheet-row-val, .sheet-flow-to .sheet-row-val, .sheet-flow-to .sheet-row-key { white-space: normal; }
+}
+.sheet-link { width: 100%; align-items: center; justify-content: space-between; background: none; border-left: 0; border-right: 0; border-bottom: 0; color: var(--accent); font: inherit; font-size: 13px; line-height: 19px; text-align: left; cursor: pointer; transition: background-color var(--tint), color var(--tint); }
+.sheet-link .sheet-row-ico { color: currentColor; margin-top: 0; }
+.sheet-link:hover { background: var(--tint-1); color: var(--accent-hover); }
+.sheet-action { color: var(--text); font-weight: 500; }
+.sheet-action:hover { color: var(--text); }
+.sheet-action[aria-busy="true"] { cursor: default; }
+.sheet-action[aria-busy="true"] .sheet-row-ico { display: none; }
+.sheet-action[aria-busy="true"]::after { content: ""; width: 12px; height: 12px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; flex: none; }
+
+/* ---------------------------------------------------------------------------
+   The smallest window, 760 × 540. */
+@media (max-width: 880px) {
+  :root { --panel-w: 216px; --portrait: 88px; --gutter: 32px; }
+  .page[data-page="setup"] .actions .btn { height: 32px; padding: 0 12px; font-size: 13px; gap: 6px; }
+  .page[data-page="setup"] .actions { gap: 8px; }
+  .app[data-mode="app"] { --portrait: 56px; }
+  .companion { padding-left: 12px; padding-right: 12px; }
+  .side-foot { margin-left: -12px; margin-right: -12px; padding-left: 22px; padding-right: 16px; }
+  .set { grid-template-columns: 92px minmax(0, 1fr) auto; }
+  .set-seg { grid-template-columns: 92px minmax(0, 1fr); }
+  /* The Key row's three buttons go under the masked key, never over it. */
+  #key-row.set-stack { grid-template-columns: minmax(0, 1fr); }
+  #key-row > .set-control { justify-content: flex-start; }
+  #key-row > .set-control > .btn-sm:first-child { margin-left: -8px; }
+  .seg-row .opt { padding: 5px 6px; }
+  /* One name at every width (CL-words-55): a long one ("Extra high") wraps inside its segment. */
+  .seg-row .opt .opt-name { white-space: normal; text-align: center; }
+  .choice-model { padding: 0 14px; gap: 12px; }
+  .models .choice-model[aria-checked="true"] { margin: 0 6px; padding-left: 8px; padding-right: 8px; }
+  .welcome { grid-template-columns: minmax(0, 1fr) 180px; gap: 20px; }
+  .welcome .ingame { width: 180px; }
+  .host-last { display: none; }
+}
+@media (max-height: 600px) {
+  :root { --portrait: 72px; }
+  /* A short window keeps less room under the last card, so Your AI fits 760 × 540 without a scroll. */
+  .page { padding-bottom: 8px; } /* Your data with Screen reading fits 760x540 (APP-D-49) */
+  .companion > .wordmark { height: 30px; margin-top: 8px; }
+  .app[data-mode="app"] { --portrait: 52px; }
+  .tracker { margin-top: 14px; }
+  .tracker-row { padding: 5px 10px; }
+  .nav { margin-top: 12px; }
+  .nav-item { height: 30px; }
+  .side-foot { height: 36px; }
+  .page[data-page="setup"] { padding-bottom: 16px; }
+  h1 { font-size: 24px; line-height: 30px; }
+  .choices-wrap, .say-grid, .fields { margin-top: 16px; }
+  .choice { height: 36px; }
+  .pick-head .lead { margin-top: 4px; }
+  /* The move banner above step 2 in the smallest window: the rows tighten so nothing scrolls. */
+  .has-move .pick-head .lead { display: none; }
+  .has-move .choice { height: 34px; }
+  .has-move .actions { margin-top: 12px; }
+  .has-move .choices-wrap { margin-top: 14px; }
+  .result-slot { margin-top: 8px; }
+  .page .banner { margin-bottom: 12px; min-height: 40px; }
+  /* A banner's two buttons stay on its line in the smallest window ("Add credit at Anthropic"). */
+  .page .banner .btn-sm { height: 28px; padding: 0 10px; font-size: 13px; }
+  .actions { margin-top: 20px; }
+  .obj { padding: 10px 14px; }
+  .objs { gap: 4px; }
+  .banner-text { min-width: 0; }
+  .page .banner:not(:has(.banner-out)) { flex-wrap: nowrap; }
+  .page .banner .btn-sm { flex: none; }
+  /* A note's words and its one button share a line when they fit, so an open note doesn't scroll. */
+  .obj-note { margin-top: 8px; padding: 8px 10px; gap: 6px 10px; flex-direction: row; flex-wrap: wrap; align-items: center; }
+  .obj-note > p { flex: 1 1 180px; }
+  .alert { margin-top: 16px; }
+}
+/* The app's largest zoom in the smallest window (about 440 × 312 CSS px): a slimmer panel, and
+   nothing wider than the stage; the stage may scroll. */
+@media (max-width: 620px) {
+  :root { --panel-w: 150px; --gutter: 16px; }
+  .app[data-mode] { --portrait: 44px; }
+  .companion { padding-left: 8px; padding-right: 8px; }
+  .companion { --rail: 8px; }
+  .companion > .wordmark { display: none; }
+  .side-foot { margin-left: -8px; margin-right: -8px; padding: 0 6px 0 10px; }
+  .status-tip { left: 0; top: calc(100% + 6px); transform: none; }
+  .foot-ver { display: none; }
+  .tracker-row { font-size: 13px; grid-template-columns: 14px 1fr; gap: 8px; }
+  .tracker-mark { width: 14px; height: 14px; }
+  .nav-item { grid-template-columns: 16px 1fr auto; gap: 8px; padding: 0 8px; font-size: 13px; }
+  .topbar { padding: 0 8px; }
+  .btn { white-space: normal; height: auto; min-height: 40px; padding: 8px 12px; text-align: left; }
+  .choice { padding: 0 12px; gap: 10px; }
+  /* The company's name wraps under the AI's at the largest zoom, never clipped (CL-player-37). */
+  .choices:not(.models) .choice { height: auto; min-height: 54px; padding-top: 6px; padding-bottom: 6px; }
+  .choice-names { flex-direction: column; align-items: flex-start; gap: 0; }
+  .choices-head, .pick-head .label { display: none; }
+  .welcome { grid-template-columns: minmax(0, 1fr); }
+  .welcome .ingame { display: none; }
+  .set, .set-seg { grid-template-columns: minmax(0, 1fr); }
+  .seg-row { overflow-x: auto; }
+  .seg-row .opt { flex: none; }
+  .host { flex-direction: column; align-items: flex-start; }
+  .host-main { align-self: stretch; }
+  .kv { grid-template-columns: minmax(0, 1fr); }
+  .cmd { white-space: normal; overflow-wrap: anywhere; }
+  .obj { padding: 12px; gap: 10px; }
+  .banner-text, .notice-text { min-width: 0; }
+  .page .banner:not(:has(.banner-out)) { flex-wrap: wrap; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}

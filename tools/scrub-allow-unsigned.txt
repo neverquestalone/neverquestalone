@@ -1,0 +1,9 @@
+# More known-OK lines for an unsigned build's scans (tools/scrub-scan.mjs, B3.0), in
+# tools/scrub-allow.txt's format. release.yml passes this list, after that one, only to the
+# scans of a Mac build that isn't signed (allow_unsigned, or a dry run; systems critic SY-16).
+#
+# An unsigned Mac build's nested code is signed ad hoc, so each app's CodeResources pins each
+# piece it holds by its code hash (a designated requirement cdhash H"..."): a hash of this
+# build's own code, which names no one. A signed build's requirements name the team instead,
+# and a hash in them still fails its scan.
+**/_CodeSignature/CodeResources cert-hash *

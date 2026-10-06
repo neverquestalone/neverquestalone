@@ -1,0 +1,9 @@
+event: response.created
+data: {"type":"response.created","sequence_number":0,"response":{"id":"resp_X","status":"in_progress","model":"grok-4.3"}}
+
+event: response.output_text.delta
+data: {"type":"response.output_text.delta","sequence_number":1,"delta":"Grok says hi."}
+
+event: response.completed
+data: {"type":"response.completed","sequence_number":2,"response":{"id":"resp_X","status":"completed","usage":{"input_tokens":700,"input_tokens_details":{"cached_tokens":0},"output_tokens":5,"output_tokens_details":{"reasoning_tokens":0}}}}
+

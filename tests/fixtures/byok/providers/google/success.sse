@@ -1,0 +1,8 @@
+data: {"id":"gem-1","object":"chat.completion.chunk","created":1790000000,"model":"gemini-3.8-flash","choices":[{"index":0,"delta":{"role":"assistant","content":"Gemini "},"finish_reason":null}]}
+
+data: {"id":"gem-1","object":"chat.completion.chunk","created":1790000000,"model":"gemini-3.8-flash","choices":[{"index":0,"delta":{"content":"says hi."},"finish_reason":null}]}
+
+data: {"id":"gem-1","object":"chat.completion.chunk","created":1790000000,"model":"gemini-3.8-flash","choices":[{"index":0,"delta":{},"finish_reason":"stop"}],"usage":{"prompt_tokens":1200,"completion_tokens":40,"total_tokens":1240,"completion_tokens_details":{"reasoning_tokens":36}}}
+
+data: [DONE]
+

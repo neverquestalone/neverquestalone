@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src nqa://app; style-src nqa://app; img-src nqa://app; font-src nqa://app; connect-src 'none'; media-src 'none'; object-src 'none'; frame-src 'none'; worker-src 'none'; manifest-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="color-scheme" content="dark">
+<title>NeverQuestAlone</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app" id="app" data-mode="loading">
+  <aside class="companion" id="companion" aria-label="NeverQuestAlone">
+    <button type="button" class="bones-btn" id="bones-btn" aria-label="NeverQuestAlone">
+      <span class="portrait" id="portrait" data-mood="idle" data-state="inactive" aria-hidden="true">
+        <span class="bones" data-face="active"></span><span class="bones" data-face="inactive"></span>
+      </span>
+      <span class="status-tip" id="status-tip" aria-hidden="true"></span>
+    </button>
+    <p class="wordmark" id="wordmark" aria-hidden="true"><span class="wordmark-dia"></span>NeverQuestAlone</p>
+    <ol class="tracker" id="tracker" aria-label="Setup progress" hidden></ol>
+    <nav class="nav" id="nav" aria-label="Pages" hidden>
+      <button type="button" class="nav-item nav-setup-now" data-nav="setup-now" hidden>Finish setup</button>
+      <button type="button" class="nav-item" data-nav="home">Home</button>
+      <button type="button" class="nav-item" data-nav="provider">Your AI</button>
+      <button type="button" class="nav-item" data-nav="privacy">Your data</button>
+      <button type="button" class="nav-item" data-nav="settings">Settings</button>
+    </nav>
+    <div class="side-foot" id="side-foot"></div>
+  </aside>
+  <div class="stage" id="stage">
+    <header class="topbar" id="topbar"></header>
+    <main class="main-body" id="main-body">
+      <div class="banners" id="banners"></div>
+      <div class="page" id="page" tabindex="-1"></div>
+    </main>
+    <div class="sheet-host" id="sheet-host"></div>
+  </div>
+</div>
+<figure class="ingame mapfig" id="map-src" role="img" aria-label="Your route on the map" hidden><img class="ingame-frame" src="img/route-map.svg" alt="" width="260" decoding="async"></figure>
+<div class="sr-only" id="live" aria-live="polite" aria-relevant="additions"></div>
+<script src="strings.js"></script>
+<script src="format.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

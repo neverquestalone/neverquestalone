@@ -1,0 +1,14 @@
+: OPENROUTER PROCESSING
+
+data: {"id":"gen-FIXTURE","object":"chat.completion.chunk","created":1790000000,"model":"qwen/qwen3.8-27b:free","provider":"Chutes","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null,"native_finish_reason":null}]}
+
+data: {"id":"gen-FIXTURE","object":"chat.completion.chunk","created":1790000000,"model":"qwen/qwen3.8-27b:free","provider":"Chutes","choices":[{"index":0,"delta":{"content":"Free "},"finish_reason":null,"native_finish_reason":null}]}
+
+: OPENROUTER PROCESSING
+
+data: {"id":"gen-FIXTURE","object":"chat.completion.chunk","created":1790000000,"model":"qwen/qwen3.8-27b:free","provider":"Chutes","choices":[{"index":0,"delta":{"content":"model says hi."},"finish_reason":"stop","native_finish_reason":"stop"}]}
+
+data: {"id":"gen-FIXTURE","object":"chat.completion.chunk","choices":[],"usage":{"prompt_tokens":1600,"completion_tokens":6,"total_tokens":1606,"cost":0,"prompt_tokens_details":{"cached_tokens":0,"cache_write_tokens":0},"completion_tokens_details":{"reasoning_tokens":0}}}
+
+data: [DONE]
+

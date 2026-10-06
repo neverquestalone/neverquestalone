@@ -165,7 +165,7 @@ What you see should match the app’s Connections page.
 
 ## Credits
 
-NeverQuestAlone is built on [chelinho139/wow-ai](https://github.com/chelinho139/wow-ai) (MIT). The addon’s code is in its download, under the [MIT license](LICENSE). The app’s source isn’t public yet. [Credits](CREDITS.md)
+NeverQuestAlone is built on [chelinho139/wow-ai](https://github.com/chelinho139/wow-ai) (MIT). All of its source is in this repository, under the [MIT license](LICENSE), so you can check every claim on this page in the code: see [Build your own](README.md#build-your-own). [Credits](CREDITS.md)
 
 ---
 

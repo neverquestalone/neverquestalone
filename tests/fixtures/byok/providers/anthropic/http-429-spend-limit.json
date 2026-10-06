@@ -1,0 +1,18 @@
+{
+  "status": 429,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "type": "error",
+    "error": {
+      "type": "rate_limit_error",
+      "message": "You have reached the monthly spend limit for your tier.",
+      "details": {
+        "error_code": "enforced_spend_limit_reached"
+      }
+    },
+    "request_id": "req_011FIXTURE"
+  },
+  "source": "rate-limits page: no retry-after, error.details.error_code [S7]"
+}

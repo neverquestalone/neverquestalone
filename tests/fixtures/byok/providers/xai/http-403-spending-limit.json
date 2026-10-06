@@ -1,0 +1,11 @@
+{
+  "status": 403,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "code": "personal-team-blocked:spending-limit",
+    "error": "You have run out of credits or reached your spending limit."
+  },
+  "source": "third-party capture, agenc-core #2483 [S55, S56]"
+}

@@ -1,0 +1,10 @@
+{
+  "status": 429,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "error": "Too many requests."
+  },
+  "source": "rate-limits page [S53]"
+}

@@ -1,0 +1,16 @@
+{
+  "status": 429,
+  "headers": {
+    "content-type": "application/json",
+    "x-ratelimit-limit": "20",
+    "x-ratelimit-remaining": "0",
+    "x-ratelimit-reset": "{{now+30000}}"
+  },
+  "body": {
+    "error": {
+      "code": 429,
+      "message": "Rate limit exceeded"
+    }
+  },
+  "source": "limits [S67]: X-RateLimit-* on 429s"
+}

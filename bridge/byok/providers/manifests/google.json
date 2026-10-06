@@ -1,0 +1,154 @@
+{
+  "schema": 1,
+  "id": "google",
+  "name": "Google",
+  "order": 45,
+  "hidden": false,
+  "local": false,
+  "adapter": "openai-chat",
+  "baseUrl": "https://generativelanguage.googleapis.com/v1beta/openai",
+  "hosts": ["generativelanguage.googleapis.com"],
+  "auth": { "header": "authorization", "scheme": "Bearer" },
+  "headers": {},
+  "keyPattern": "^AQ\\.[A-Za-z0-9_.-]{20,}$|^AIza[0-9A-Za-z_-]{35}$",
+  "keyRejectPattern": null,
+  "keyMatchOrder": 30,
+  "keyExample": "AQ.…",
+  "requestIdHeader": null,
+  "paths": { "chat": "/chat/completions", "models": "/models" },
+  "keyCheck": null,
+  "models": {
+    "default": "gemini-3.8-flash",
+    "smarter": "gemini-3.1-pro-preview",
+    "allowAny": false,
+    "list": [
+      { "id": "gemini-3.8-flash", "label": "Gemini 3.8 Flash", "costRank": 4, "effort": true, "contextTokens": 1000000,
+        "source": "Google's models page (https://ai.google.dev/gemini-api/docs/models, updated 2026-09-24): gemini-3.8-flash, stable, \"our most intelligent Flash model\"; its OpenAI compatibility examples use gemini-3.8-flash. Thinking levels low, medium (default), high (https://ai.google.dev/gemini-api/docs/thinking; reasoning_effort on the OpenAI compatibility endpoint, https://ai.google.dev/gemini-api/docs/openai); thinking can't be turned off on Gemini 3 models. Price (https://ai.google.dev/gemini-api/docs/pricing, updated 2026-09-24, paid tier, per 1M tokens): $0.75 input, $3.75 output, $0.075 cached input through 2026-12-31; $1.50, $7.50 and $0.15 from 2027-01-01 (usage/prices.json)." },
+      { "id": "gemini-3.7-flash", "label": "Gemini 3.7 Flash", "costRank": 4, "effort": true, "contextTokens": 1000000, "replacedBy": "gemini-3.8-flash",
+        "source": "Google's models page (https://ai.google.dev/gemini-api/docs/models, updated 2026-09-24): gemini-3.7-flash, stable. Thinking levels low, medium (default), high (https://ai.google.dev/gemini-api/docs/thinking; reasoning_effort on the OpenAI compatibility endpoint, https://ai.google.dev/gemini-api/docs/openai); thinking can't be turned off on Gemini 3 models. Price (https://ai.google.dev/gemini-api/docs/pricing, updated 2026-09-24, paid tier, per 1M tokens): $0.75 input, $3.75 output, $0.075 cached input through 2026-12-31; $1.50, $7.50 and $0.15 from 2027-01-01 (usage/prices.json)." },
+      { "id": "gemini-3.6-flash", "label": "Gemini 3.6 Flash", "costRank": 4, "effort": true, "contextTokens": 1000000, "replacedBy": "gemini-3.8-flash",
+        "source": "Google's models page (https://ai.google.dev/gemini-api/docs/models, updated 2026-09-24): gemini-3.6-flash, stable. Thinking levels minimal, low, medium (default), high (https://ai.google.dev/gemini-api/docs/thinking; reasoning_effort on the OpenAI compatibility endpoint, https://ai.google.dev/gemini-api/docs/openai); thinking can't be turned off on Gemini 3 models. Price (https://ai.google.dev/gemini-api/docs/pricing, updated 2026-09-24, paid tier, per 1M tokens): $0.75 input, $3.75 output, $0.075 cached input through 2026-12-31; $1.50, $7.50 and $0.15 from 2027-01-01 (usage/prices.json)." },
+      { "id": "gemini-3.5-flash-lite", "label": "Gemini 3.5 Flash-Lite", "costRank": 2, "effort": true, "contextTokens": 1000000,
+        "source": "Google's models page (https://ai.google.dev/gemini-api/docs/models, updated 2026-09-24): gemini-3.5-flash-lite, stable. Thinking levels minimal (default), low, medium, high (https://ai.google.dev/gemini-api/docs/thinking; reasoning_effort on the OpenAI compatibility endpoint, https://ai.google.dev/gemini-api/docs/openai); thinking can't be turned off on Gemini 3 models. Price (https://ai.google.dev/gemini-api/docs/pricing, updated 2026-09-24, paid tier, per 1M tokens): $0.30 input, $2.50 output, $0.03 cached input (usage/prices.json)." },
+      { "id": "gemini-3.5-flash", "label": "Gemini 3.5 Flash", "costRank": 5, "effort": true, "contextTokens": 1000000,
+        "source": "Google's models page (https://ai.google.dev/gemini-api/docs/models, updated 2026-09-24): gemini-3.5-flash, stable. Thinking levels minimal, low, medium (default), high (https://ai.google.dev/gemini-api/docs/thinking; reasoning_effort on the OpenAI compatibility endpoint, https://ai.google.dev/gemini-api/docs/openai); thinking can't be turned off on Gemini 3 models. Price (https://ai.google.dev/gemini-api/docs/pricing, updated 2026-09-24, paid tier, per 1M tokens): $1.50 input, $9 output, $0.15 cached input (usage/prices.json)." },
+      { "id": "gemini-3.1-flash-lite", "label": "Gemini 3.1 Flash-Lite", "costRank": 1, "effort": true, "contextTokens": 1000000,
+        "source": "Google's models page (https://ai.google.dev/gemini-api/docs/models, updated 2026-09-24): gemini-3.1-flash-lite, stable. Thinking levels minimal, low, medium, high (https://ai.google.dev/gemini-api/docs/thinking; reasoning_effort on the OpenAI compatibility endpoint, https://ai.google.dev/gemini-api/docs/openai); thinking can't be turned off on Gemini 3 models. Price (https://ai.google.dev/gemini-api/docs/pricing, updated 2026-09-24, paid tier, per 1M tokens): $0.25 input, $1.50 output, $0.025 cached input (usage/prices.json)." },
+      { "id": "gemini-3.1-pro-preview", "label": "Gemini 3.1 Pro Preview", "costRank": 6, "effort": true, "contextTokens": 1000000,
+        "source": "Google's models page (https://ai.google.dev/gemini-api/docs/models, updated 2026-09-24): gemini-3.1-pro-preview, preview. Thinking levels low, medium, high (default) (https://ai.google.dev/gemini-api/docs/thinking; reasoning_effort on the OpenAI compatibility endpoint, https://ai.google.dev/gemini-api/docs/openai); thinking can't be turned off on Gemini 3 models. Price (https://ai.google.dev/gemini-api/docs/pricing, updated 2026-09-24, paid tier, per 1M tokens): $2 input, $12 output, $0.20 cached input up to 200K; $4, $18 and $0.40 above (usage/prices.json)." },
+      { "id": "gemini-3-flash-preview", "label": "Gemini 3 Flash Preview", "costRank": 3, "effort": true, "contextTokens": 1000000,
+        "source": "Google's models page (https://ai.google.dev/gemini-api/docs/models, updated 2026-09-24): gemini-3-flash-preview, preview. Thinking levels minimal, low, medium, high (default) (https://ai.google.dev/gemini-api/docs/thinking; reasoning_effort on the OpenAI compatibility endpoint, https://ai.google.dev/gemini-api/docs/openai); thinking can't be turned off on Gemini 3 models. Price (https://ai.google.dev/gemini-api/docs/pricing, updated 2026-09-24, paid tier, per 1M tokens): $0.50 input, $3 output, $0.05 cached input (usage/prices.json)." }
+    ]
+  },
+  "effort": {
+    "gemini-3.8-flash": {
+      "low": { "reasoning_effort": "low" },
+      "medium": { "reasoning_effort": "medium" },
+      "high": { "reasoning_effort": "high" }
+    },
+    "gemini-3.7-flash": {
+      "low": { "reasoning_effort": "low" },
+      "medium": { "reasoning_effort": "medium" },
+      "high": { "reasoning_effort": "high" }
+    },
+    "gemini-3.6-flash": {
+      "minimal": { "reasoning_effort": "minimal" },
+      "low": { "reasoning_effort": "low" },
+      "medium": { "reasoning_effort": "medium" },
+      "high": { "reasoning_effort": "high" }
+    },
+    "gemini-3.5-flash-lite": {
+      "minimal": { "reasoning_effort": "minimal" },
+      "low": { "reasoning_effort": "low" },
+      "medium": { "reasoning_effort": "medium" },
+      "high": { "reasoning_effort": "high" }
+    },
+    "gemini-3.5-flash": {
+      "minimal": { "reasoning_effort": "minimal" },
+      "low": { "reasoning_effort": "low" },
+      "medium": { "reasoning_effort": "medium" },
+      "high": { "reasoning_effort": "high" }
+    },
+    "gemini-3.1-flash-lite": {
+      "minimal": { "reasoning_effort": "minimal" },
+      "low": { "reasoning_effort": "low" },
+      "medium": { "reasoning_effort": "medium" },
+      "high": { "reasoning_effort": "high" }
+    },
+    "gemini-3.1-pro-preview": {
+      "low": { "reasoning_effort": "low" },
+      "medium": { "reasoning_effort": "medium" },
+      "high": { "reasoning_effort": "high" }
+    },
+    "gemini-3-flash-preview": {
+      "minimal": { "reasoning_effort": "minimal" },
+      "low": { "reasoning_effort": "low" },
+      "medium": { "reasoning_effort": "medium" },
+      "high": { "reasoning_effort": "high" }
+    }
+  },
+  "rateLimitHeaders": null,
+  "errorMap": {
+    "codes": {},
+    "messages": [
+      { "text": "API key not valid", "kind": "auth_invalid", "status": [400] },
+      { "text": "API key expired", "kind": "auth_invalid", "status": [400] },
+      { "text": "location is not supported", "kind": "region_blocked", "status": [400] }
+    ],
+    "types": {},
+    "status": { "403": "bad_request", "429": "rate_limited" },
+    "notes": "Gemini's OpenAI compatibility layer (https://ai.google.dev/gemini-api/docs/openai, updated 2026-09-02) answers Chat Completions at /v1beta/openai with the key as a Bearer token; errors come as [{error: {code, message, status}}]. A bad key is a 400 INVALID_ARGUMENT whose message says 'API key not valid', never a 401; an unsupported country is a 400 FAILED_PRECONDITION, 'User location is not supported'. A 403 PERMISSION_DENIED is a key without the Generative Language API (a good key, the wrong project), not a rejected one. Gemini 3 models can't turn reasoning off; reasoning_effort maps to their thinking level. UNVERIFIED against a live key."
+  },
+  "privacy": {
+    "class": "cloud",
+    "retention": "Paid tier: logged 55 days for abuse monitoring, not used to improve products; the free tier's content may be used to improve Google's products and seen by human reviewers",
+    "trains": "Paid tier: no. Free tier: yes",
+    "zdr": "Not on the Gemini API (Vertex AI only)",
+    "sets": "Nothing to set",
+    "notes": "The Gemini API Additional Terms (https://ai.google.dev/gemini-api/terms) require users to be 18 or older and say the API is for professional or business use; in the EEA, Switzerland and the UK only Paid Services may be used. The app can't tell a free key from a paid one.",
+    "player": {
+      "short": "Keeps messages up to 55 days; may train on them before billing.",
+      "keeps": "Kept up to 55 days to check for abuse. Until you set up billing, people at Google may read your messages.",
+      "trains": "Not once you set up billing. Until then, your messages may be used to improve Google’s products.",
+      "zeroRetention": "",
+      "sets": "Nothing extra."
+    },
+    "sources": ["https://ai.google.dev/gemini-api/terms", "https://ai.google.dev/gemini-api/docs/usage-policies"]
+  },
+  "terms": {
+    "login": "API key only (an AI Studio key). A Gemini app subscription isn't an API key.",
+    "notes": [
+      "Google's Gemini API Additional Terms require users to be 18 or older and put API clients for users in the EEA, Switzerland and the UK on Paid Services only.",
+      "Gemini 3 models always think a little; low effort sends reasoning_effort low."
+    ],
+    "playerNotes": [
+      "Google’s terms for its API say you must be 18 or older.",
+      "A Gemini app subscription isn’t an API key and doesn’t include API credit."
+    ],
+    "sources": ["https://ai.google.dev/gemini-api/terms"]
+  },
+  "defaultRequestOptions": {},
+  "safetyIdentifier": false,
+  "limits": { "maxOutputTokens": 2048, "testMaxTokens": 16 },
+  "priceSource": "bundled",
+  "display": {
+    "card": "Gemini",
+    "maker": "Google",
+    "order": 35,
+    "termsVersion": 1,
+    "keyPrefix": "AQ.",
+    "placeholder": "AQ.…",
+    "openLink": "keys",
+    "stepLinks": { "step2": "billing" },
+    "fields": ["Get API key", "Create API key", "Set up billing", "Copy"]
+  },
+  "links": {
+    "keys": "https://aistudio.google.com/apikey",
+    "billing": "https://aistudio.google.com/projects",
+    "limits": "https://aistudio.google.com/usage",
+    "privacy": "https://ai.google.dev/gemini-api/terms#data-use-paid",
+    "terms": "https://ai.google.dev/gemini-api/terms",
+    "verified": false
+  },
+  "sources": ["https://ai.google.dev/gemini-api/docs/openai", "https://ai.google.dev/gemini-api/docs/models", "https://ai.google.dev/gemini-api/docs/pricing"]
+}

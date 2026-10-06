@@ -1,0 +1,18 @@
+{
+  "status": 503,
+  "headers": {
+    "content-type": "application/json",
+    "retry-after": "3"
+  },
+  "body": {
+    "error": {
+      "code": 503,
+      "message": "Provider overloaded",
+      "metadata": {
+        "error_type": "provider_overloaded",
+        "provider_name": "Chutes"
+      }
+    }
+  },
+  "source": "errors-and-debugging [S66]"
+}

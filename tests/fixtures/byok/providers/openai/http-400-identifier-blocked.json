@@ -1,0 +1,15 @@
+{
+  "status": 400,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "error": {
+      "message": "identifier blocked",
+      "type": "invalid_request_error",
+      "param": null,
+      "code": null
+    }
+  },
+  "source": "safety-checks guide [S32]; exact body shape unconfirmed"
+}

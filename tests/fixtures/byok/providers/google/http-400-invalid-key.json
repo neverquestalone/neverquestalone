@@ -1,0 +1,6 @@
+{
+  "source": "Gemini API troubleshooting (https://ai.google.dev/gemini-api/docs/troubleshooting): a bad key is 400 INVALID_ARGUMENT, 'API key not valid'; the OpenAI compatibility layer wraps errors in a list. UNVERIFIED against a live key.",
+  "status": 400,
+  "headers": { "content-type": "application/json" },
+  "body": [{ "error": { "code": 400, "message": "API key not valid. Please pass a valid API key.", "status": "INVALID_ARGUMENT" } }]
+}

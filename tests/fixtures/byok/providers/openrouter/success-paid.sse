@@ -1,0 +1,6 @@
+data: {"id":"gen-FIXTURE","object":"chat.completion.chunk","created":1790000000,"model":"qwen/qwen3.8-27b:free","provider":"Chutes","choices":[{"index":0,"delta":{"content":"Paid."},"finish_reason":"stop","native_finish_reason":"stop"}]}
+
+data: {"id":"gen-FIXTURE","object":"chat.completion.chunk","choices":[],"usage":{"prompt_tokens":2000,"completion_tokens":10,"total_tokens":2010,"cost":0.000412,"prompt_tokens_details":{"cached_tokens":500,"cache_write_tokens":0},"completion_tokens_details":{"reasoning_tokens":2}}}
+
+data: [DONE]
+

@@ -1,0 +1,8 @@
+{
+  "about": "A level-up as the addon draws it: hello, the state it names (st=42), then the evt. Replay: node tools/nqa-replay.mjs tests/fixtures/event-level-up.json --dry-run (companion PRD C2.2).",
+  "records": [
+    "2\u001f3fa9c2d1\u001fa3f1\u001fhello\u001f\u001fcur=0;ver=1.2.0;build=70009;iface=16001;n=8;ctx=0;sig=ok;slots=180;sid=3fa9c2d1e07b4c55\u001f",
+    "2\u001f3fa9c2d1\u001fa3f1\u001fstate\u001f\u001fcur=0;sid=3fa9c2d1e07b4c55;seq=42\u001f{\"v\":1,\"sid\":\"3fa9c2d1e07b4c55\",\"seq\":42,\"t\":1790000000,\"char\":{\"name\":\"Tavi\",\"realm\":\"Lantern Moor PvE 3\",\"class\":\"SHAMAN\",\"race\":\"Tauren\",\"level\":7,\"xp\":40,\"xpMax\":4500,\"money\":11800},\"loc\":{\"map\":1412,\"zone\":\"Mulgore\",\"sub\":\"Bloodhoof Village\",\"x\":49.6,\"y\":66.3},\"quests\":[{\"id\":748,\"title\":\"Poison Water\",\"level\":5,\"trivial\":false,\"complete\":false,\"obj\":[{\"text\":\"Prairie Wolf Paw\",\"have\":3,\"need\":6},{\"text\":\"Plainstrider Talon\",\"have\":6,\"need\":6}]},{\"id\":761,\"title\":\"Swoop Hunting\",\"level\":8,\"trivial\":false,\"complete\":false,\"obj\":[{\"text\":\"Trophy Swoop Quill\",\"have\":2,\"need\":8}]}],\"prof\":[{\"name\":\"Mining\",\"rank\":8,\"max\":75}],\"pending\":[{\"kind\":\"zone\",\"zone\":\"Thunder Bluff\",\"t\":1790000100}],\"omitted\":[]}",
+    "2\u001f3fa9c2d1\u001fa3f1_9\u001fevt\u001fc0ffee0\u001fcur=0;kind=level_up;agent=main;name=Companion;from=6;to=7;sid=3fa9c2d1e07b4c55;st=42\u001f"
+  ]
+}

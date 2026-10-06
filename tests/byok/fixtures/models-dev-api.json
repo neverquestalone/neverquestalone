@@ -1,0 +1,58 @@
+{
+  "anthropic": {
+    "id": "anthropic",
+    "name": "Anthropic",
+    "models": {
+      "claude-haiku-4-5-20251001": {
+        "id": "claude-haiku-4-5-20251001",
+        "name": "Claude Haiku 4.5",
+        "cost": { "input": 1, "output": 5, "cache_read": 0.1, "cache_write": 1.25 },
+        "limit": { "context": 200000, "output": 64000 }
+      },
+      "claude-sonnet-5": {
+        "id": "claude-sonnet-5",
+        "name": "Claude Sonnet 5 (fixture price, not real)",
+        "cost": { "input": 3, "output": 15, "cache_read": 0.3, "cache_write": 3.75 },
+        "limit": { "context": 1000000, "output": 128000 }
+      },
+      "claude-opus-5-5": {
+        "id": "claude-opus-5-5",
+        "name": "Claude Opus 5.5",
+        "cost": { "input": 4, "output": 20, "cache_read": 0.2, "cache_write": 5 },
+        "limit": { "context": 1000000, "output": 128000 }
+      }
+    }
+  },
+  "openai": {
+    "id": "openai",
+    "models": {
+      "gpt-6-luna": { "id": "gpt-6-luna", "cost": { "input": 0.1, "output": 0.5, "cache_read": 0.01, "cache_write": 0.125 } },
+      "gpt-6-sol": { "id": "gpt-6-sol", "cost": { "input": 2, "output": 10, "cache_read": 0.2, "cache_write": 2.5 } },
+      "gpt-6-astra": { "id": "gpt-6-astra", "cost": { "input": 10, "output": 50, "cache_read": 1 } }
+    }
+  },
+  "google": {
+    "id": "google",
+    "models": {
+      "gemini-3.1-flash-lite": { "id": "gemini-3.1-flash-lite", "cost": { "input": 0.25, "output": 1.5 } },
+      "gemini-3.8-flash": { "id": "gemini-3.8-flash", "cost": { "input": 0.75, "output": 3.75, "reasoning": 3.75 } },
+      "gemini-3.6-flash": { "id": "gemini-3.6-flash", "cost": { "input": 0.5, "output": 3 } }
+    }
+  },
+  "xai": {
+    "id": "xai",
+    "models": {
+      "grok-4.3": {
+        "id": "grok-4.3",
+        "cost": { "input": 1.25, "output": 2.5, "cache_read": 0.2, "context_over_200k": { "input": 2.5, "output": 5, "cache_read": 0.4 } }
+      },
+      "grok-build-0.1": { "id": "grok-build-0.1", "cost": { "input": 1, "output": 2, "cache_read": 0.2 } }
+    }
+  },
+  "mistral": {
+    "id": "mistral",
+    "models": {
+      "mistral-large": { "id": "mistral-large", "cost": { "input": 2, "output": 6 } }
+    }
+  }
+}

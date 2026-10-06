@@ -1,0 +1,15 @@
+{
+  "status": 500,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "error": {
+      "message": "The server had an error while processing your request.",
+      "type": "server_error",
+      "param": null,
+      "code": null
+    }
+  },
+  "source": "error-codes guide [S29]"
+}

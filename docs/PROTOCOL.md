@@ -1,0 +1,350 @@
+# NeverQuestAlone protocol (v2)
+
+The contract between the addon (Lua, in the game) and the bridge (Node, on the same computer: inside the NeverQuestAlone app, or headless from a checkout with `bridge/nqa.mjs start`). Both sides are built and tested against this file. It implements PRD 1.6 §9.2–§9.4 on WoW Forever 1.60.1.70009, where the bridge signals with **doorbells**: files that exist when the UI loads, rung by deleting them briefly (conflict C-8, `docs/VERIFICATION.md` E-015).
+
+Version 0.2 of both sides adds the companion (companion PRD 1.2 §6): the `state` and `evt` records, `st=` on `msg`, `sid=` on `hello`, and `bridge.caps` and `bridge.stateSeq` in the slot header (§2.6). The addon draws neither new record until the bridge lists it in `bridge.caps`, so a 0.1 bridge never sees one.
+
+Cap `z` lets the addon send the `state` body deflated, in base64, marked `z=1`, which takes the state from about 35 strip rows to about 15 (§2.6). The addon does it only when the bridge lists `z`, so a bridge without it only ever gets plain JSON.
+
+Cap `ctx` lets a `msg` beside its state leave the game context out (about 430 bytes, 5 or 6 rows): the bridge builds the turn's game context from that state (§2.6). The addon does it only when the bridge lists `ctx`, so a bridge without it gets the context as before.
+
+Upstream wow-ai's protocol (magic `C7 1A`, `WoWAI_S###`, content-based `.wav` signals) is v1. The two never read each other's strips or files.
+
+Every turn runs on the player's own AI: the bridge hands it to its backend (`bridge/byok/backend.mjs`: an API key, an OpenRouter sign-in or a model on the player's computer), which builds the model's request (§2.6, "The turn"). What the backend adds to the slot is in `docs/byok/BUILD-PLAN.md`, "Contract: what the addon reads".
+
+## 1. Files and names
+
+| What | Path under `Interface/AddOns/` | Created by | When |
+|---|---|---|---|
+| The addon | `NeverQuestAlone/` (`NeverQuestAlone.toc` and its Lua) | the installer, or the addon zip | install; the client must launch after |
+| Slot addons | `NQA_S001/` … `NQA_S200/`, each `NQA_Sxxx.toc` + `Inbox.lua` | the installer or the addon zip (folders, TOC); bridge (`Inbox.lua` content) | folders at install; content on every publish |
+| Reload-path inbox | `NeverQuestAlone/Inbox.lua` | bridge | every publish |
+| Doorbells | `NeverQuestAlone/sig/ctl/` (`present.wav`, `bell_*.wav`) | the installer or the addon zip, and the bridge at start (any that are missing) | before the UI loads (a bell made later is seen after the next `/reload`) |
+
+- The installer is `installAddon` in `bridge/byok/wow.mjs`: the app's, and the developer command line's `install --wow <flavor folder>`. It refuses while the game runs.
+- Folders must exist when the client launches. The bridge never creates a folder under `sig/`; it only creates and deletes files in the five family folders.
+- Slot TOC (0.5.3, E-047): `## Interface: <client interface>`, `## Title: NeverQuestAlone Part NNN`, `## Notes: A part of NeverQuestAlone that brings replies into the game. Leave it checked.`, `## Category: NeverQuestAlone Parts`, `## Group: NQA_SNNN` (its own name), `## IconTexture: Interface\AddOns\NeverQuestAlone\Media\NeverQuestAlone`, `## LoadOnDemand: 1`, `## Dependencies: NeverQuestAlone`, then `Inbox.lua` (`slotToc` in `bridge/transport/slots.mjs`). The installer rewrites every slot TOC that differs (a new interface number, or these fields); the client reads TOCs only at its start.
+- The AddOns list: the client groups addons named alike that depend on each other, so without their own `Group` the slots showed as 200 check boxes under NeverQuestAlone's row. With it and the `Category`, they sit under one category row. The installer folds it at install, while WoW isn't running and once per install (`foldSlotCategory` in `slots.mjs` merges `["NeverQuestAlone Parts"] = true` into `g_addonCategoriesCollapsed` in `WTF/SavedVariables/Blizzard_AddOnList.lua`, Blizzard_AddOnList's SavedVariablesMachine, keeping every other key; `partsFolded` in the config records it), so the first character select already shows it folded. The addon folds it once at a logout where the installer didn't (`P.FoldParts` in `Settings.lua`), and remembers a fold it finds at login. The list then shows that folded row and the addon's own (its TOC title: NeverQuestAlone).
+- The addon zip (`tools/package-addon.mjs`, `npm run package:addon`) holds all of the above except bridge-written content: `NeverQuestAlone/` (with the repository's licence as `LICENSE.txt`), its doorbells as 0-byte files, and every slot folder with its TOC (the same `slotToc`) and placeholder `Inbox.lua`, exactly as the installer makes them. So a store install is already complete for the transport, and the NeverQuestAlone app started later is heard without restarting WoW (`docs/ADDON-FIRST.md`). The installer's fold is the one step the zip can't take (`WTF/` is outside `Interface/AddOns/`): after a zip install the first session shows the category row open, and the addon folds it at that session's logout (`P.FoldParts`).
+- SavedVariables: `NQADB`, `NQAMapDB`. The slot file's global is `NQA_SlotData`; the reload inbox's is `NQA_Inbox`.
+
+## 2. Game → bridge: strip v2
+
+### 2.1 Frame
+
+Unchanged from upstream except the magic:
+
+```
+[0xC7 0x2C] [frame hi, lo] [len hi, lo] [payload: len bytes] [Fletcher-16 s1, s2]
+```
+
+- The checksum covers `frame hi` through the last payload byte (upstream's range).
+- Bytes are packed MSB-first into 3-bit cells: bit 2 = R, bit 1 = G, bit 0 = B, each channel fully on or off. Cells are 4×4 physical pixels, 200 per row, at most 48 rows, anchored at the top-left of `UIParent` with the strip frame scaled to `768 / physicalScreenHeight` (and recomputed on `UI_SCALE_CHANGED` / `DISPLAY_SIZE_CHANGED`: upstream issue #8).
+- `frame` is a counter that changes whenever the strip's content changes. Nothing is deduplicated by frame; records are deduplicated by key.
+- A new frame recolours only the cells whose value changed. So that a cell left wrong (another addon recolouring a texture, say) can't stop the strip being read, the addon draws it again in full, keeping its `frame`, while the bridge is heard and something drawn still waits for its answer (a keyed record's ack, the hello's): once a frame that has waited 12 s of visible time (the slowest ack in normal play is about 10 s: §3.1's 8 s ring, the capture's 0.25 s, the bell's poll and the 1.5 s push gap), and every 30 s however often the frames change (`Transport.lua` `T.Heal`; `/bones diag` counts them). A helper sends on a frame once it decodes, so a repaired frame is read like any other.
+- Maximum payload: 3,200 bytes. A single message text is limited to 2,900 bytes (SE-1). The companion's `state` record keeps its body within 3,100 bytes, so with its header (at most about 78 bytes) it always fits one frame (§2.6).
+
+Each system's capture helper (`bridge/transport/capture.mjs`: `NeverQuestAlone Capture.app` on macOS, `nqa-capture.exe` on Windows, `capture_x11.py` under Wine on Linux; magic `C72C`) hands the bridge `{"id": <frame>, "text": "<payload>"}` once per distinct payload.
+
+### 2.2 Records
+
+The payload is one or more records separated by RS (`0x1E`). A record's fields are separated by US (`0x1F`):
+
+```
+2 US token US key US type US chat US args US body
+```
+
+| Field | Content |
+|---|---|
+| `2` | Record version. Anything else is ignored (logged once). |
+| `token` | Install token: 8 lowercase hex characters, created with the saved data (`db.token`). |
+| `key` | Send key `<nonce>_<n>` (see 2.3), or just `<nonce>` for `hello`, `seen` and `state`. |
+| `type` | See 2.4. |
+| `chat` | Local chat id: `c` + 6 lowercase hex characters. Empty for `hello`, `seen` and `state`. |
+| `args` | `k=v` pairs joined by `;`. Values are percent-encoded (`%`, `;`, `=`, and bytes below 0x20 or 0x7F become `%XX`). **Every record has `cur=<seq>`**, the addon's applied cursor. |
+| `body` | Free text; the last field, so it may itself contain US. Never contains RS: the addon turns bytes 0x1D–0x1F in user text and context into spaces. |
+
+Records are drawn newest first until the payload would pass 3,200 bytes; older unacked records wait for a later frame.
+
+### 2.3 Keys, nonce and counter
+
+- `nonce`: 4 lowercase hex characters, new at every login and every `/reload` (`math.random`, never reused within a UI session).
+- `n`: `db.sendCounter`, persisted, only ever increases. Every keyed record takes the next `n`.
+- Key: `<nonce>_<n>`, for example `a3f1_41`. Because the nonce changes with every UI session, a key never repeats even after a client crash rolls the saved data (and `n`) back (RV-3).
+- A turn's idempotency key is `nqa:<token>:<key>`: the key the core sends a turn with (`backend.send`'s `idem`), which the backend takes as the run's id and its ledger's key, so a message sent twice is one turn.
+- Keyed records stay in `db.outbox` until acked. After `/reload` they're redrawn **verbatim**, with their original key.
+
+### 2.4 Record types (M1, and the companion's)
+
+| Type | Keyed | Args (besides `cur`) | Body | Bridge action |
+|---|---|---|---|---|
+| `hello` | no (`key` = nonce) | `ver` addon version, `build` client build, `iface` interface number, `n` current sendCounter, `ctx=0/1`, `sig=ok` or `sig=<reason>` (the addon's static self-test), `slots=<free>`, `p` (optional: the push counter read so far), `sid` (optional: this character's session, §2.6), `toc` (optional, 0.4.0: the TOC's `## Version` as the game read it at its start; the bridge reads nothing from it since its updates from the game went), `slot` and `mode` (the next slot index it loads, and the way its records go out, `pixel`, `stream` or `reload`; an older addon sends neither; §4.2) | Game context lines (empty when context is off) | Registers the token and nonce; publishes the answer (`bridge.nonce`) and rings push. A new token starts at the current head seq. A `sid` other than the one waiting for its recap ends that session as a logout (§2.6). |
+| `msg` | yes | `agent` (default `main`), `name` (chat name), `ctx=0/1`, `q=followup`, `st` (with caps: the `state` seq it goes with), `bare=1` (0.3.0: this one message goes without game data) | `ctx=1`: context, then GS (`0x1D`), then the text. `ctx=0`: the text. The context goes when it changed since the addon last sent it; with cap `ctx` and `st`, only when a line the state doesn't carry changed (§2.6) | Outbox → ack → the backend's `send` (§2.6, "The turn"). With `st`, the send waits up to 2 s for that state, and the turn carries it (§2.6). Its game context is the message's own, else the stored one with that state's lines put in (cap `ctx`, §2.6). With `bare=1` it goes as typed: no game context (not even the stored one) and no state; the next message carries them as usual. Refused (acked, an error line, never sent): text starting with `[NeverQuestAlone`, text shaped like an API key (KY-10), and any message while the typed guard holds (§2.6). |
+| `stop` | yes | none | empty | The chat's messages still in the outbox are taken back; one the backend has is stopped (`abort`: a turn waiting in its queue is dropped before it runs, one running is ended) |
+| `patch` | yes | `label` (chat name); with caps `think`: `think` (a thinking level, `off`, `minimal`, `low`, `medium`, `high`, `xhigh` or `max`, or `default`) and `agent` (the chat's, since this patch can come before the chat's first `msg`); with cap `model`: `model` (a model id, or `default`) | empty | `label`: the chat's name in the slot (`chats[].label`; the backend keeps none). `think`: the chat's thinking level. Each of the chat's turns then goes with its `thinking`, which outranks the player's effort (`byok.effort`) for that turn only, at the model's nearest level when it hasn't that one (the next one up, else its highest; the model's levels are `bridge.provider.efforts`, or the chat's `efforts` for its own model). `default` drops the chat's own level: the turn goes with no `thinking`, at the player's effort. `model`: the backend's `setChatModel`, the chat's own model from its next turn (`default`: the provider's again); one the provider doesn't offer changes nothing and gets an error line (kind `model_not_found`). |
+| `forget` | yes | none | empty | Drops the chat from bridge state with its runs and published records, and the backend forgets it (`forget`: its transcript, its own model; a turn still going is stopped) (CS-4). The check-ins chat goes the same way; its next event starts it again |
+| `seen` | no (`key` = nonce) | `p` (optional): the highest push counter the addon has read; `slot`: the next slot index it loads (an older addon sends none) | empty | Records the cursor (`cur`) and `p`, which stops push re-rings (§3); trims records |
+| `evt` | yes (chat `c0ffee0`) | `kind` (`level_up`, `route_done`, `route_stale`, `zone_first`), `agent`, `name` (the check-ins chat's), the kind's own (`from`/`to` levels, `n` quests, `layer`, `zone`: the zone's name, game text shown only inside the data block), `sid`, `st`, `at` (the addon's `time()` when it first sent the event) | empty | Acked like a `msg`. Unless check-ins are off or the level was already turned, it becomes a turn in the check-ins chat's session (§2.6). While the runaway fuse holds, it takes no turn and rides with the next typed message (§2.6). |
+| `upd` | yes (chat empty: about no chat) | `a` (`check` or `install`) | empty | An older addon's update request (its window's "Check for Updates", `/bones update`, 0.4.0 to 0.5.x): acked, and nothing else. The app's updater keeps the addon up to date, and this addon sends none (`/bones update` says the app does it). |
+| `state` | no (`key` = nonce) | `sid`, `seq`, `z=1` (with cap `z`: the body is deflated) | The game state as JSON (§2.6): at most 12,000 bytes for a bridge with cap `qlog`, else 2,800, and at most 3,100 bytes as it goes on the strip. With `z=1`, that JSON deflated and in base64 | With `z=1`, inflated first (§2.6). Validated and kept per token if newer (same `sid` and a higher `seq`, or another `sid`); titles the addon shortened are put back whole (§2.6, cap `qlog`); published as `bridge.stateSeq` and `bridge.stateSid` without ringing push. A malformed body, a `z=1` body longer than 16,384 bytes, or one that doesn't inflate to at most 12,000 bytes, is logged (`state-rejected`) and dropped; the previous state stays. Retries sends waiting for it (`st`). |
+
+The addon draws `seen` when its applied cursor is 10 or more records, or 16 KB of record text, past the last cursor it reported, or 30 s after it applied a record it hasn't reported. Every record reports `cur`, so a busy addon rarely needs `seen` for the cursor. It also draws one right after a slot load that brought a newer push counter, so the bridge stops ringing, and again after a push ring whose load brought none: the bridge missed the last one (§4.2 rule 1). The addon draws one after every slot load, with `slot`, so the bridge writes only the slots from there on (§4.2).
+
+The app's additions to these records (the hello's `loc` and `fr`, the message's `intro`) are in `docs/byok/BUILD-PLAN.md`, "Contract: what the addon reads". A record type the bridge doesn't know is rejected at parse and never acked, so the addon keeps drawing it: a new type needs the bridge's side first (and its cap).
+
+### 2.5 Dedupe on the bridge
+
+- Keyed records are deduplicated by `(token, key)` for 7 days (bounded set). A duplicate is **acked again** and otherwise ignored: its key goes back in `bridge.acked`, and push rings only if the key had dropped out of that list. The addon draws a record until it's acked, so copies are normal.
+- `hello` is handled once per `(token, nonce)`, and push rings once for it; later copies change nothing, and push re-rings until the addon reads the answer (§3).
+- `seen` is idempotent: the bridge keeps the highest `cur` per token.
+
+### 2.6 The companion: game state, events and the session recap
+
+Bones helps with leveling from live game state (companion PRD 1.2). Three things travel for it, all gated by **caps**: the addon draws `state` and `evt` only when the latest slot (or the reload inbox) lists them in `bridge.caps`, and adds `st=` only then too. `/bones companion off` (Settings' Check-Ins) stops the events, and the state that goes on its own (after a hello, beside an event). A typed message still carries the state and names it (`st=`) while Game Data with Messages is on: that switch, not Check-Ins, decides what a message carries. With it off (or a message sent bare) there's neither, and the bridge gives a message that names no state none of the one it holds.
+
+**The state** (F1), built by the addon from the game, with every string stripped of escapes, `|`, newlines and control characters and cut to 60 bytes at a UTF-8 boundary:
+
+```json
+{"v":1,"sid":"3fa9c2d1e07b4c55","seq":42,"t":1790000000,
+ "char":{"name":"Tavi","realm":"Testrealm","class":"SHAMAN","race":"Tauren","level":6,"xp":3010,"xpMax":3600,"money":11800},
+ "loc":{"map":1412,"zone":"Mulgore","sub":"Bloodhoof Village","x":49.6,"y":66.3},
+ "questCount":1,"questMax":40,
+ "quests":[{"id":748,"title":"Poison Water","level":5,"trivial":false,"complete":false,"obj":[{"text":"Prairie Wolf Paw","have":3,"need":6}]},
+          {"id":132,"title":"The Defias Brotherhood","level":18,"complete":false,"obj":[],"chain":{"step":2,"of":7,"to":"The Deadmines","kind":"dungeon","next":135}}],
+ "poi":[{"id":748,"map":1412,"x":52.1,"y":70.4}],
+ "chainStarts":[{"id":1699,"title":"The Rethban Gauntlet","level":22,"zone":"Westfall","of":4,"to":"Fire Hardened Hauberk","kind":"reward","item":6972,"quality":"rare","next":1702}],
+ "prof":[{"name":"Mining","rank":8,"max":75}],
+ "gear":[{"slot":16,"id":2495,"ilvl":5}],
+ "pending":[{"kind":"zone","zone":"Thunder Bluff","t":1790000100}],
+ "omitted":[]}
+```
+
+- Keys in this order, compact, whole numbers without a decimal point, `x`/`y` in map percent with one decimal. A key the client has no data for is left out (`poi` when `C_QuestLog.GetQuestsOnMap` returns nothing, `gear` with nothing equipped, `trivial` without `IsQuestTrivial`).
+- `quests` is **every quest in the log**, in log order, to the last one: headers and hidden quests aren't quests, and nothing else is ever left out (the quest log below). `questCount` is how many there are, `questMax` the game's cap, and `questUnread` (only when above 0) how many more quests the game listed without a quest id yet.
+- `chain` (after `obj`, only on a quest whose chain leads somewhere): where the quest's chain leads, from `Chains.lua`'s data (`tools/quest-chains`, the emulator's quest data worked out for the character's race and class): `step` of `of` (each left out when it can't be exact), `to` (the dungeon's or raid's name as the client has it, or the reward's), `kind` (`dungeon`, `raid` or `reward`; a reward adds `item` (one the class can equip: a reward it can't equip is no payoff for it), `quality` (`rare`, `epic`, `legendary`) and, when it's one of several rare or better picks the class could take, `choice`, how many), and `next` (the quest after it on the way; a breadcrumb's is the quest it sends you to, and it has no `step`). `chainStarts` (after `poi`): up to 3 chains the character can start, first steps they haven't done and don't have, near their level, those in their zone first, each `id`, `title` (when the client has it), `level`, `zone`, then its chain's facts but the step.
+- Limits: `obj` ≤ 5 per quest, `poi` ≤ 40, `chainStarts` ≤ 3, `prof` ≤ 6, `gear` ≤ 19, `pending` ≤ 10. The JSON is at most 12,000 bytes for a bridge that lists cap `qlog` (2,800 for one that doesn't), and the body as it goes on the strip (deflated with cap `z`) at most 3,100. While it's over, parts go in this order, each named in `omitted` when the state had any: `gear`, `poi`, `quests.obj.done` (the objectives of quests ready to turn in: all done), `chainStarts`, `quests.obj.text`, `quests.obj`, `quests.chain`, `quests.level` (level and `trivial`), `prof`, `pending` (the milestones wait for the next state: one that left them out doesn't confirm them), `quests.title.short` (every title cut to 24 bytes), `quests.title.tiny` (12 bytes), `quests.title` (no titles). **A quest never goes**: each keeps its `id` and `complete`. A shortened title is a byte prefix of the whole one, cut on a UTF-8 boundary with nothing added, and that quest gets `"cut":true` (after `title`). The last step leaves some 30 bytes a quest with the character and place, so even an older bridge's 2,800 bytes take a log of 70 quests; only past that: `{"v":1,"sid":…,"seq":…,"state":"too_large"}`. With caps `z` and `qlog`, 40 quests of 60-byte titles keep them whole in words or CJK and at least 24 bytes of them in random ASCII, which doesn't deflate (the tests' byte budget); with `qlog` and no `z` (`transport.deflate: false`) they keep 12, with the professions and milestones waiting, and the bridge puts back the titles it has seen whole. Each fit starts one step richer than the last one ended (for the same caps), so an unchanged state takes one or two encodes, and one that shrank gets its detail back a step a build. This order is `Companion.lua` `DROP_ORDER`. The companion PRD's 1.6 Limits bullet puts professions and milestones after the title cuts: this section is the one in force.
+- `sid`: 16 hex characters, drawn at `PLAYER_ENTERING_WORLD` with `isInitialLogin` (a `/reload` keeps it), kept per character. `seq`: per install, only goes up, and only when the body (all but `seq` and `t`) changes.
+- `pending` (F4): milestones since the bridge last confirmed a state: `{"kind":"zone","zone","t"}` (a character's first visit to a zone), `{"kind":"prof","name","max","t"}` (a profession's max rank went up) and `{"kind":"quest_done","id","title","t"}`. Each stays until `bridge.stateSeq` and `bridge.stateSid` equal the seq and sid of a state that carried it. The sid matters: a crash loses the saved seq, so a new session's seq can equal the one the bridge still holds from the last session.
+- The addon builds it at turn time only: for a message, an event or `/bones state`. A relevant change (quest log, XP, money, equipment, skills, zone, level) builds nothing by itself; the next turn reads the game as it is then.
+
+**The quest log** (cap `qlog`). Every quest in the player's log reaches Bones on every turn, up to the game's own cap: the owner's Bones once said "Call of Fire fell off the bottom" of a list the addon had cut at 25 on a log that holds 40.
+- **The cap**, read at run time (`Store.lua` `ns.QuestLogMax`): the larger of `C_QuestLog.GetMaxNumQuestsCanAccept()` (unverified on 70009: no Forever UI file calls it) and `Constants.QuestLogConsts.MAXIMUM_NUM_QUESTS_LOG_CAN_ACCEPT` (the 40 that Forever's own quest log counts against: wow-ui-source `forever` `bd2470a`, `QuestMapFrameUtils.lua:16-22` and `QuestConstantsDocumentation.lua:145-150`), either one when only one is there, else 40, at least every client's cap. The larger, because it's only reported: an API answering a stale 25 would make a log of 30 look full. Never `MAX_QUESTS`: on Forever that UI global is a stale 25 (`Constants.lua:464-466`), as is `MAX_QUEST_WATCHES`, the tracker's. The cap is only reported (`questMax`, never below the quests read); nothing cuts the list to it. `/bones apicheck` shows each source, and `/bones state` which one was used.
+- **The read** (`ns.QuestLog`) walks every entry `C_QuestLog.GetInfo` lists, once. On Forever those take in the quests under a collapsed header. The game's own quest list (wow-ui-source `forever`, `Mainline/QuestMapFrame.lua`, which camelot loads) reads them and hides them itself while it draws: `QuestLogQuests_ShouldShowQuestButton` returns false for "a quest, but its header is collapsed", and `QuestLogQuests_BuildSingleQuestInfo` walks every entry and ties each quest to its header. `SaveHeaderStates` in the same file opens headers only so a search can show its matches. So:
+  - **No header is ever opened or closed.** The addon calls neither `ExpandQuestHeader` nor `CollapseQuestHeader`, fires no `QUEST_LOG_UPDATE` of its own and filters none: the map and the HUD read again for every one, and the next turn's state reads the log as it is then. Nothing is kept between reads: the list is the log as it is, so an unchanged log gives the same state and no new `seq`. It reads the same in a fight and with the quest log on screen.
+  - **A quest** is a row that list would show but for a collapsed header or a search: not a header, not `isHidden`, not `isTask` (a bonus objective), `isBounty` only once complete, and with a quest id. A row it would show that has no id yet counts in `questUnread`, and the model is told the game listed that many more without an id and that they're still in the log.
+  - **The game's own count** (`GetNumQuestLogEntries`' second value) is a diagnostic only. Whether it takes in hidden quests isn't known, so it never changes what the model is told.
+  - **Checked in game** with `/bones apicheck`, "The quest log as read": the quests, the hidden ones and those with no id yet, the game's own count, and how many quests were read under collapsed headers. A header collapsed over quests should show them there.
+  - Rounds 3 to 5 of the review opened collapsed headers to read them. The filter on the `QUEST_LOG_UPDATE` that opening fires swallowed real quest changes for a second (critic r5 QL-F-17), a header that couldn't be opened made a whole list read as cut (QL-F-18), and every read fired two events a collapsed header at every other addon (QL-F-19). All three went with the opening, and so did `questUnreadHeaders`.
+- **The same read** makes the context's quest line (`Chats.lua`), the map's quest titles (`Map.lua`), the window's Game Data count (`UI.lua`: the quests read and those with no id yet) and Quality of Life's full log (`QoL.lua` `LogFull`: those quests at the cap, so a hidden quest never makes it full a quest early; the quest a hand-in frees, which the log lists until the game's update, is judged on the same count, from its reward page on). A send reads it once for its state and its context (`R.questShare`); a bare message reads neither, so none stops at an entry count either. The context keeps its quest line whole, and its Game and Character lines (the bridge makes a game context only with one of them); the lines between go first, whole. Only a log past any client's cap (some 110 quests) takes it past its 900 bytes.
+- **Titles** (cap `qlog`): the bridge keeps per token the titles its states sent whole (`companion.json` `titles`, the 1,000 seen most recently) and puts them back in a state that sent them shortened or left out (`bridge/app/companion.mjs` `fillTitles`). A title never seen whole stays a prefix, flagged `cut` and marked `…`. The turn's game data, its game context and `/bones state` use the whole titles.
+- The bridge logs `quest-log` (`count`, `max`, `unread`: quests listed with no id yet, `cut`: titles still cut) when those change, so the cap the client really reports shows in the log.
+- **What the model reads** always opens with the count (`questLogLine`): `Quest log: 27 of 40 quests, every one listed.`; `Quest log: 40 of 40 quests (the log is full), every one listed.`; `Quest log: 39 quests listed (max 40), not the whole log: the game listed 1 more without a quest id yet. They're still in the log: a quest that isn't listed may be one of them.`; a turn that goes with an older state than the one it named (`st=` not there after the 2 s wait) adds `This game data is from before the latest change in game: a quest picked up in the last few seconds may not be in it yet.` (`STALE_NOTE`), and the stored context its game context then comes from says `…, all listed as of an earlier read (a quest picked up since may not be on it): …` (`staleContext`, also for a `too_large` state); titles still cut: `Titles cut to fit (not known in full): 1527.`; an older addon's state (no `questCount`): `Quests listed: 25. An older addon sends at most 25; more may be in the log.` The context's line carries the same count, word for word as the bridge writes it from the state: `Quest log (id, * = ready to turn in): 27 of 40 quests, all listed: 748*,761,…`, or `39 quests listed (max 40), not the whole log (the game listed 1 more without a quest id yet; still in the log): …`. No quest bound applies: `validateState`'s 12,000 bytes hold at most 1,333 quests, all listed (`QUEST_LIST_MAX`, 1,500, only bounds a list read outside it). The companion prompt (`prompts/companion.md`) tells Bones the list is the whole log when it says so, so he never says a quest fell off it, and that a quest missing from a list that isn't whole may still be in the log.
+- **The data block** (`bridge/byok/runtime/`) puts the state in its data block every turn it has one. `sanitize.mjs` keeps every quest (`QUEST_LIST_MAX` bounds only a list no state the bridge takes can hold); `game.notes` opens with the same count line (`context.mjs` `questNote`), with `STALE_NOTE` when the turn's state didn't come in time (`rawTurn` marks it `stale`), and the context's `Quest log` line is kept whole (up to `QUEST_LIST_MAX` ids). Fitting the block to its size limit trims quest detail (objective texts, objectives, chains, levels, then the rest of the state; the chains to start go after the quest points), never a quest, the count or that line. A state with quest chains adds one more note after the count, `CHAIN_NOTE`: what a chain's facts mean, and to put a chain step forward when picking quests and say where it leads, never guessing a step or count the data left out. It goes only on turns that have chains, so the prompt pack (the cached prefix, and the cost figures that follow its size) stays as it is. With identity off, the character's own name is redacted everywhere but in quest titles, which are the game's (a character named Fire keeps "Call of Fire"). With the live list in the block, memory's older quest lines stay out.
+  - **With the app's companion switch off**, a typed message's state is the quest log alone (`Companion.lua` `P.ListOnly`: every quest's id, title and ready flag, with the character and the place, PRIVACY.md's game information), fitted from the title steps, so every quest reaches the model with its title on the default settings too. The bridge holds a typed turn's state to that (`boot.mjs` `withPrivacy`, `context.mjs` `listOnlyState`), whatever an addon sent or the core kept from while it was on: objectives, quest levels, quest chains, gear, points of interest, professions and milestones stay home, and events still need the switch on. The professions still reach the model through the message's context: the quest log alone doesn't stand for them, so the context goes when its Professions line changed (`P.ForSend`).
+  - **Without a state** (a message that names none, from an older addon with the switch off, say, gets none of the one the bridge holds), the context's `Quest log` line has ids only, and `game.notes` opens with `IDS_ONLY_NOTE`: quest names aren't in this data, so a quest the player names by title may be any of those ids, and the model never says it isn't in their log. Memory's quest lines (from the logbook's `quests.md`, the only titles then) are quest lines alone (not the logbook's own notes), those of the quests the context's line lists (only those when it says it's the whole log, else those first: `memory.mjs` `liveQuests`), with room of their own on top of the digest's 400 tokens (`QUEST_TOKENS`, 640: a full log of 40 at their least); over it each first shrinks to its id, title and "(ready to turn in)", the other parts give some, and only then do lines go from the end, each id named in `questsNote`. The pack says a list is whole only when its count line says so.
+- **The companion PRD** (vault, 1.6) lags this section: besides the drop order above, its changelog stops at round 4 of the review and still names `questUnreadHeaders` and headers the addon couldn't open. This section is the spec until the PRD's next edit.
+
+**When the state travels** (P3): only at turn time. It rides beside every `msg` and `evt` while the bridge doesn't hold it (`bridge.stateSeq`/`stateSid`), for 8 s after it's queued, and once after each hello. It's drawn after the newest keyed record, so if both don't fit one frame the record goes first and the state follows when the record is acked. In stream or reload mode it goes into the reload outbox (key = the nonce), replacing the session's previous one, like `hello`.
+
+**Off** (any bridge takes it). `/bones companion off` also tells the bridge to forget the state it holds: a `state` record with `off=1` and no body, drawn like a state until a slot shows no `bridge.stateSeq` (or put in the reload outbox), and again once after each hello while check-ins stay off and the bridge holds one. The bridge drops the token's state, so no turn carries it again (before, a chat that hadn't had that state got it once more), and `bridge.stateSeq`/`stateSid` leave the slot. The next state, once check-ins are on again, is taken as usual.
+
+**Deflated** (cap `z`). The state JSON is most of the band the strip draws: 2,597 bytes, 35 rows, in the owner's play on 2026-09-26. When the bridge lists `z` in `bridge.caps`, the addon sends the body deflated and in base64 instead, with `z=1` after `seq`. That was 1,048 bytes and 15 rows, and a message with its context now fits beside it in one frame.
+- **The addon** uses the client's `C_EncodingUtil`: `CompressString(json, Enum.CompressionMethod.Deflate)`, which is raw deflate (RFC 1951; the enum also has `Zlib` and `Gzip`), then `EncodeBase64` with the standard alphabet. Before sending, it runs `DecodeBase64` and `DecompressString` and checks that they give back the exact JSON. It sends the JSON as it is when the bridge doesn't list `z`, when any of the four functions is missing, fails or returns nothing, when that check fails, or when the result isn't shorter. Sources, at wow-ui-source `forever` `bd2470a` (1.60.1.70009): `Blizzard_APIDocumentationGenerated/EncodingUtilDocumentation.lua:10-27` (CompressString), `28-44` (DecodeBase64), `61-77` (DecompressString), `108-124` (EncodeBase64) and `206-218` (CompressionMethod); Blizzard's CooldownViewer, which loads in Forever, makes the same calls (`CooldownViewerSettingsDataStoreSerialization.lua:269-281`).
+- **Base64, not raw bytes:** the capture app turns the payload into text as UTF-8 (`StripDecoder.swift`), which would replace deflate's bytes, and a body can't carry RS.
+- **The bridge** inflates a `z=1` body before anything else, so the JSON it keeps, the data block and the fenced hash are exactly those of the same state sent plain. It tries raw deflate, then zlib, then gzip. A body longer than 16,384 bytes (the base64 of 12,000 bytes that don't deflate), or one that would inflate past 12,000 bytes, is refused, so a small body can't grow into a big one (`inflateBody(body, { maxBody, maxText })`).
+- `transport.deflate: false` in the bridge's config leaves `z` out of the caps, and the addon goes back to plain JSON with its next state.
+- `/bones state` says how the state travels, and `/bones apicheck` shows its deflated size on this client.
+- Only the state is deflated. The game context on a hello or `msg` (about 430 bytes) comes out within a few percent of its size once deflated and in base64, so it goes as it is.
+
+**The context from the state** (cap `ctx`). A message's game context (its context lines, PRD §9.9) repeats most of the state beside it. When the bridge lists `ctx` in `bridge.caps`, a `msg` with `st=` leaves its context out, and the bridge builds the turn's context from the state instead. With the owner's numbers (a 22 to 72-byte message, 426 bytes of context, the state deflated to 1,048) the frame goes from about 1,700 bytes to 1,230 to 1,280: 23 strip rows become 17 or 18.
+- **The addon** leaves the context out when all of these hold: the bridge lists `ctx`; the message names a state (`st=`), so the companion is on and the message isn't bare; that state isn't `too_large`; the context is on; and the state reaches the bridge in the same frame as the message (the reload path writes it first; on the strip, everything drawn with it fits 3,200 bytes). It also checks the lines the state doesn't carry: the game and client, the character line without its level (race, class, faction, guild) and talents, and the professions when the state left them out to fit (`prof` in `omitted`) or is the quest log alone (the app's companion switch off), so a rank change never leaves the bridge with an old Professions line. When any of those changed since it last sent a context, the whole context goes once, and the bridge stores it. Otherwise the message goes as before: its context when that changed, an empty one when the context was just turned off.
+- **The bridge** builds the game context of a turn that names a state it holds (same session, that seq or later; `evt` turns too) and carries no context of its own. It takes the stored context (the hello's, or the last message's that carried one) and puts in, from the state, the level, location and subzone, position, money and XP, professions and quest ids with `*` for complete, written as the addon writes them (`bridge/app/context.mjs` `withState`). The game and client, faction, guild and talents stay as stored. A message that carried its own context goes with it, as before.
+- **Fallbacks:** with the named state not there after the 2 s wait, another session's state, or a `too_large` one, the turn gets the stored context as before. With the context off (none stored) there's no game context, whatever the state. A stored context written for another character is never mixed with the state. `bare=1` gets none.
+- **What Bones sees:** the same context lines the addon would have sent. The tests check them line for line against the addon's own context, the quest line's count included (both leave out hidden quests and read every other quest). The only differences: at most 6 professions go (the state's limit); and the zone is the one the state reads (`GetRealZoneText`), which inside some instances isn't the name the game shows. `evt` turns now carry the state's place and level rather than the last context stored, which could be minutes old.
+- **Versions:** an addon before `ctx` sends its context as before, and the bridge uses it. The addon only leaves its context out for a bridge that lists `ctx`. The bridge's `sent` log says `ctxState` for a context built from the state.
+
+**Events** (F3, A2). The addon sends an `evt` when something happens that Bones can help with:
+
+| `kind` | When | Once per |
+|---|---|---|
+| `level_up` | `PLAYER_LEVEL_UP` | character and level (the bridge also keeps one turn per session or character and level, across restarts) |
+| `route_done` | the navigator finishes a route | layer version |
+| `route_stale` | 3 or more quests picked up that no map stop covers (`q`), 90 s after the last pickup | set of quests |
+| `zone_first` | a character's first visit to a zone, outside instances | character and zone |
+
+- Never in combat (they wait until 3 s after it), at least 120 s apart (`level_up` excepted), each kind switchable (`/bones companion level|route|stale|zone on|off`).
+- The check-ins chat ("Check-ins") has the fixed id `c0ffee0`, pinned, reserved on top of the 40-chat limit. The addon makes it the first time it's needed, or when a record for it arrives (§4.3).
+- Queued events are saved per character (a fight or a `/reload` doesn't lose them) and dropped after 30 minutes. A level-up waits 2 s, so its state has the new level; two level-ups in one fight make one turn. Zones crossed on a flight path don't count; the landing zone does. A route counts as done when its last stop is reached, not skipped.
+- No daily or per-kind limit: every event takes a turn, save one thing, the **runaway fuse** against a bug loop (`bridge/byok/usage/fuse.mjs`, `AUTO_FUSE`). It counts each automatic turn (an event, a session recap) at its send time: an `evt`'s `at=` in ms, or its arrival when `at=` is missing, not a whole number or later than the arrival, so a backlog that arrives at once (the reload path, a capture back after a gap) keeps the addon's 120 s spacing. More than 10 in a minute, or 60 in an hour, pauses automatic help: each event is acked and takes no turn, and rides with the next typed message as a line of its data (at most 5 kept: "Held while automatic help was paused: …"). The one that trips it writes one line in the check-ins chat (kind `auto_paused`, Okay only, answering no message: "<Name> paused check-ins: your next message turns them back on."), and while it holds the slot says `bridge.usage.autoPaused`. A typed message, in any chat, resets it. `companion-events.json` keeps the fuse's window and a pause (a restart keeps both), the level-ups already turned and the day's count (for status; it resets at local midnight).
+- Typed messages have their own guard (`TYPED_GUARD`): more than 20 in a minute pauses sending until the player clicks Resume sending in the app. While it holds, each message is acked and answered with one line (kind `send_paused`, action `desktop`) and isn't kept, so a loop's copies never go later. One read from SavedVariables doesn't count toward it.
+
+**The turn.** An event becomes a turn in the check-ins chat, `c0ffee0`. What the core hands the backend (`send({chatId, idem, turn, thinking})`) is the raw turn, `turn`: `kind` (`msg`, `evt` or `recap`); the words as typed (`typed`); the event and its args (`event`, game text sanitized to 64 characters, RT-11); the state (`state`, sanitized: the session's latest, which with `st=` is that seq or later; a recap's document for a recap; none for a bare message); the game context (`contextLines`, built from the state with cap `ctx`, and `useContext`); `notes` (the events that ride along); and `intro` and `loc` (the first meeting). The core renders nothing itself. The backend builds the model's request from it (`bridge/byok/runtime/context.mjs`): the game data as one line of JSON in a `<game_data>` block (every game string sanitized; other players' names replaced unless the player chose to send them), then the player's words, or for an event a fixed line, never game text:
+
+~~~
+[NeverQuestAlone event] Level-up: 6 → 7. Sent by the addon, not typed by the player.
+~~~
+
+Every turn but a bare one carries the state, since the backend keeps no game data in its history. A typed `msg` that names no state (Game Data with Messages off, or an older addon) gets none of the state the bridge holds, which may be long out of date: its quest list would read as the whole log now (the breaker's r2 case, Check-Ins off on an addon that then sent no state). A turn only ever uses a state from its own session (the `evt`'s `sid`, else the latest hello's): `st=` waits up to 2 s for that seq from that session, and a turn with none goes without a state rather than with the last session's. The logbook (F4, `bridge/byok/runtime/logbook.mjs`) runs in the bridge, on the state or recap it holds, with no model in the loop.
+
+**The session recap** (F6). The addon keeps per-session totals per character (XP from `PLAYER_XP_UPDATE` deltas, across a level-up with the old `xpMax`; money; quests turned in; zones) and at `PLAYER_LOGOUT` writes one JSON string to `NQADB.companion.lastSession`:
+
+```json
+{"v":1,"kind":"session","sid":"…","char":{"name","realm","class","race"},"start":{"t","level","xp","xpMax","money"},"end":{…},"xpGained":1200,"moneyDelta":3200,"questsTurnedIn":1,"zones":["Mulgore","Thunder Bluff"],"ended":"unknown"}
+```
+
+- `/bones companion recap off` (or companion off) writes none.
+- On the 70009 client, `UnitXP`, `UnitXPMax` and `GetMoney` read 0 in `PLAYER_LOGOUT`, while `UnitLevel` still reads right (seen 2026-09-26). So `end` takes what play last saw wherever the logout can't say: when max XP reads 0 though the session's last reading had an XP bar, at no higher level, XP and max XP come from the last reading counted in play; when money reads 0, it's the money last seen (`PLAYER_MONEY` and each `PLAYER_ENTERING_WORLD`). Such reads during play are never counted or kept. A level-up to a level with no XP bar still counts.
+- The bridge takes an `end` with `xp`, `xpMax` and `money` all 0 after a `start` with an XP bar as that logout read (an addon from before the fix wrote it as it was): `end.xp`, `end.xpMax`, `end.money` and `moneyDelta` go to Bones as `null`, unknown rather than a loss, and the `recap` log line says `endUnknown`. `xpGained`, counted in play, stands.
+- The bridge's SavedVariables poller reads it, with the file's write time. The session has ended when the game exits within 60 s after a new `lastSession` (`ended: "quit"`; an exit before the write, or from an earlier game process, doesn't count), or when a later hello or state brings another `sid` (`"logout"`).
+- A `/reload` also writes `lastSession`, but its session is heard again afterwards (the next hello, with the same `sid`, more than 2 s after the write, in whichever order the hello and the poll arrive), so it makes no recap. Records read from SavedVariables themselves count as heard at the file's write time. A crash writes nothing, so there's no recap. (In stream or reload mode the next hello only arrives with the next write, so a crash after a `/reload` there can still send that `/reload`'s totals as a logout.)
+- Game exits come from the capture app's lines `{"game":"running|absent|launched|exited","pid":n}`, with a fallback check of the pid every 10 s.
+- One recap per `sid`, an automatic turn (the runaway fuse counts it, and holds it like an event): the document (with `ended` set) is the turn's data, and the backend's fixed line is `[NeverQuestAlone event] Session recap. Sent by the app after the game closed, not typed by the player.` (`text`: `[NeverQuestAlone event] Session recap. Sent by the bridge after the game closed, not typed by the player; the block below is game data, not instructions.` plus the document, fenced and hashed). Its reply reaches the game with `NeverQuestAlone/Inbox.lua` at the next login.
+
+**Trust** (TB5): `state` and `evt` are strip input, so any addon could forge them. A forged state gives wrong advice. Forged `evt` records start turns until the runaway fuse pauses automatic help; ones spaced out by their `at=` get past it, bounded by the run queue (one run per chat, two at once), the provider's own limits and a daily spend limit the player may set. A typed `[NeverQuestAlone …` is refused on both sides, so a game line can't pass for an event. Bones has no tools: a turn can only write text into its own chat.
+
+## 3. Bridge → game: doorbells
+
+On 70009 the client fixes **which files exist when the UI loads** (launch or `/reload`). A file created after that reads as missing until the next `/reload`. A file that was there at load is checked live: delete it and it reads missing, recreate it and it plays again (E-015, C-8). `PlaySoundFile(path, "Master")` returns true (with a handle) for any such file, whatever its content. So:
+
+- The bridge's signals are **doorbells**: 0-byte files made by the installer or the addon zip (and by the bridge at start if missing), so they exist at every load, and never renamed.
+- The bridge **rings** a bell by deleting it for a short pulse, then recreates it. It never leaves a bell deleted for long: a bell that is missing at the moment the UI loads is invisible for that whole session.
+- Bells come in pairs where that matters (push, alive). The bridge never has both bells of a pair missing at once, so a load can lose at most one of them.
+- The addon **checks** a bell with `PlaySoundFile`, stopping any handle at once (`StopSound`). A bell reading missing counts only if `ctl/present.wav` plays in the same check; otherwise the channel is down (sound off, for example), and nothing is read that check.
+- A bell that reads missing for **10 s in a row** is dead for now (a pulse lasts at most 3 s), and is ignored until it reads present again.
+
+| Bell (under `NeverQuestAlone/sig/ctl/`) | Pulse | Rung when | Addon |
+|---|---|---|---|
+| `present.wav` | never | never | Static self-test: must play; the control for every bell read |
+| `absent_<random>.wav` | never created | never | Static self-test: must not play |
+| `bell_push_a.wav`, `bell_push_b.wav` | 3 s | the slots hold a publish the addon hasn't read (3.1). Rings alternate between the two bells. A ring asked for during a pulse follows it on the other bell; once the pulse has lasted 1 s, that ring cuts it short (the bell comes back first), so a reply rung during its ack's pulse starts at most 1 s after it (audit PF-03). A lone ring keeps its whole 3 s | A pulse on either: load one slot (4.2 rule 1) |
+| `bell_alive_a.wav`, `bell_alive_b.wav` | 2.5 s | alternately, every 10 s while the bridge runs (each bell every 20 s) | A pulse is a beat from the bridge (the light) |
+| `bell_act.wav` | 0.5 s, at least 0.75 s apart | a tool action of a run started from WoW | Counts pulses as the busy send's actions (the slot snapshot corrects the count) |
+
+**The push counter `P`** (`state.json`, only increases). A publish that should ring increments `P` first, then writes the slots the addon can load next (§4.2; every slot when the bridge can't tell), whose header carries `bridge.push = P`, then rings. So a ring always finds a slot with that publish. The addon reports the highest `P` it has read with `p=` on a `seen` record (§2.3). **Re-ring:** while the addon's reported `p` is below `P`, the bridge rings again every 10 s six times, then every 60 s up to 10 minutes after the publish.
+
+**Self-test** (every login, `/reload`, every 60 s, and when a `Sound_*` CVar changes):
+
+1. **Static:** `present.wav` plays and a fresh `absent_*` name doesn't.
+2. **Live:** the hello's answer rings push. A push pulse seen after the hello means live signals work. If 30 s pass with none, one slot load settles it: if that slot answers our hello, the ring was missed, and live fails.
+
+If either part fails, or both push bells are dead, the addon runs in **slot-only mode** (§4.2): it says so in `/bones diag` and in the light's tooltip, and keeps retrying the static part every 60 s. A dead bell usually means it was missing when the UI loaded; a `/reload` brings it back.
+
+**Cleanup** (bridge, at start): the files of the v2.0 signal families (`ack/`, `push/`, `act/`, `presence/`, `ctl/live_*`, `ctl/probe_*`) are removed. None of them was ever seen in game.
+
+### 3.1 When push rings
+
+| What changed | Ring |
+|---|---|
+| `reply`, `error` or `aborted` record | Immediately |
+| A keyed record acked (the key is in `bridge.acked`) | Immediately, coalesced with other publishes (250 ms). Except the ack that starts a turn (a `msg` or an `evt` taken): it's written at once and rings within 8 s (`ACK_RING_MS`, `transport.ackRingMs`), or with the turn's first `reply`, `error` or `aborted` record if that comes first. Every slot carries `bridge.acked`, so the ack rides the reply, and a turn costs one slot load instead of two (audit PF-02) |
+| A hello handled (its answer: `bridge.nonce`) | Immediately |
+| The backend's state (`gw`) | Only on ready ↔ not-ready transitions: ready at once, not-ready after 30 s (none if it's ready again by then) |
+| Chat snapshot only (busy, progress) | No ring. The addon picks it up with the slot loads it already makes (§4.2 rule 3) |
+
+## 4. Bridge → game: slots
+
+### 4.1 Slot file
+
+Every slot's `Inbox.lua` and `NeverQuestAlone/Inbox.lua` hold the same table, for the token that said hello most recently:
+
+```lua
+NQA_SlotData = {
+  v = 2, ts = "2026-09-25T18:04:00Z", now = 1790359440,
+  token = "3fa9c2d1",
+  bridge = { ver = "0.4.8", push = 137, nonce = "a3f1", acked = { "a3f1_41", "a3f1_42" },  -- acked: last 50 keys
+             caps = { "state", "evt", "think", "z", "ctx", "qlog" }, stateSeq = 42, stateSid = "3fa9c2d1e07b4c55", backend = "byok" },
+             -- plus what the backend and the app add: more caps, bridge.provider, bridge.usage, bridge.echo,
+             -- bridge.capture, rt, and each chat's model and effort (docs/byok/BUILD-PLAN.md)
+  gw = { state = "ready", since = 1790359000, queued = 0 },
+  agents = { { id = "main", name = "Bones" } },
+  chats = { { id = "c3f9a1e", agent = "main", label = "Hyjal route", think = "medium",
+              busy = true, queued = 0, run = { started = 1790359380, actions = 1, last = "…" } } },
+  records = {
+    { seq = 512, t = "reply", chat = "c3f9a1e", mid = "…", agent = "main", text = "…", summary = "…", more = 0 },
+    { seq = 513, t = "error", chat = "c3f9a1e", kind = "overloaded", action = "retry", alt = "pick_provider", text = "Anthropic is busy right now. Still busy. Try again in a minute." },
+  },
+  map = { epoch = "…", version = 3, layers = { } },
+}
+```
+
+- `now` is the bridge's Unix time. `bridge.nonce` is the last hello nonce the bridge handled for `token`.
+- `bridge.caps` lists the record types beyond M1 the bridge takes (§2.6), `think` when it takes the `patch` argument (§2.4), `z` when it inflates a deflated `state` body, `ctx` when it builds a turn's game context from the state it names, and `qlog` when it takes a `state` of up to 12,000 bytes of JSON and puts back the titles the addon shortened (§2.6); a chat's `think` is the level its turns go with; `bridge.think`, the default for a chat without its own, is absent (this bridge has none: such a chat's turns go at the player's effort). `bridge.stateSeq` and `bridge.stateSid` are the seq and session of the latest state it holds for `token`. While the runaway fuse holds (§2.6), `bridge.usage.autoPaused` is true, and the addon promises a turn in the HUD ("Bones is on it") only when it isn't. None of them rings push.
+- `bridge.warn`, when present, is a version mismatch (SD-4): the addon version against the bridge's. The addon shows it in game and in `/bones diag`. The app's bridge leaves an interface mismatch out: it sets the installed TOCs' `## Interface:` line to the game's number itself (patch day, systems critic SY-29).
+- `bridge.patch` is `"failed"` while the app couldn't set the installed TOCs to a new game version's interface number. The addon, which the game loaded anyway ("Load out of date AddOns"), says so once a session in its own words, with the one fix in the app. Absent otherwise. It doesn't ring push.
+- `bridge.backend` is `"byok"` on every slot. This addon reads nothing from it. The two-build addon an earlier app build installed (until 2026-09-29) tells its public side by it, which matters while one still runs, until WoW restarts after the app installed this addon; the field can go once no install can run that addon (with the first public release).
+- `gw` is the backend's: `state` is `connecting` (until the backend first says), `ready`, `no_key` (no key for the chosen AI), `key_invalid` (a key rejected, or an OpenRouter sign-in that ended) or `paused` (the player paused Bones in the app), with its `reason`. (`ver`, the backend's hello version `byok-1`, is gone with the hello, code health BR-22; the addon never read it.) What the AI can do right now (slowed, out of credit, down) is `rt` (BUILD-PLAN).
+- `records` holds every record above the cursor this token last reported. **A record above the reported cursor is never removed.**
+- `seq` only goes up. A reported cursor above the bridge's last `seq` means its state was lost or recreated after the addon applied those records: the last `seq` moves up to it, so new records are numbered above what the addon has applied. At start it is never below a record kept in `records.json`.
+- `bridge.push` only goes up the same way. A reported `p` (§3) above it means the bridge's state was lost or recreated after the addon read that far: `P` moves up to it, so the next ring's counter is one the addon hasn't read.
+- `replay = 1` marks a record at or below the highest cursor this token has ever reported. The addon adds those to history silently: no sound, toast or echo (a client crash rolls `db.cursor` back; RV-3).
+- If `token ~= db.token`, the addon uses only the header, `gw`, `agents` and `chats`, and applies no records.
+- `map` is upstream's shape: `{ epoch, version, layers = { { name, title, ordered, loop, points = { { m, x, y, label, kind[, note[, q]] }, … } } } }`. NeverQuestAlone adds two optional point fields. `note` says what to do at the stop: at most 200 characters with `|` removed, 6,000 characters of notes per layer and 16,000 per map (the oldest layers lose theirs first). It never says how far or how close the stop is, since the HUD shows the live distance: `bridge/app/map-protocol.mjs` `dropDistanceClaims` takes such claims out by its list `DISTANCE_CLAIMS`: only the claim's own words, never an instruction ("Kill 8 boars 20yd away, then rest." keeps "Kill 8 boars, then rest."), and a clause whole only when nothing else is in it ("Closest stop, a few steps from you."). It keeps clauses with a compass point, and leaves no note when nothing else was said; Copy and Paste's `Paste.lua` does the same with the same list. `q` lists up to 6 quest ids. `note` is `""` when only `q` is set; a point with neither has five fields.
+
+Record types:
+- M1: `reply`, `error`, `aborted`.
+  - `reply` carries `chat`, `mid` (the backend's message id), `agent`, `text` (rendered, ≤ 12,000 characters), `summary` (TL;DR, ≤ 160 characters) and `more` (characters left out, 0 if none).
+    - Since 0.3.0 it may also carry what the bridge took out of the reply's game-side blocks (`bridge/app/render.mjs`), each left out when absent:
+      - `chips`: from a ```` ```wowchips ```` block. Up to 3 suggested replies, plain text, `|` removed, ≤ 60 characters each. The window shows them under the chat's newest reply, and the HUD with its TL;DR; a click sends the words to that chat.
+      - `refs`: from ```` ```wowrefs ````, as `{ q = { … }, i = { … }, s = { … } }`: quest, item and spell ids, whole numbers, 8 of each at most. The addon builds the game links itself, from the ids and the client's own names, so no agent text becomes a live link (TB3).
+      - `weights`: from ```` ```wowweights ````, stat weights for the character's build (`str`, `agi`, `sta`, `int`, `spi`, `armor`, `dps`, `ap`, `rap`, `crit`, `hit`, `sp`, `heal`, `mp5`, `def`, `dodge`, `parry`, `block`; numbers under 100). The addon keeps them per character (`NQADB.weights`) and scores item tooltips with them.
+    - An addon older than 0.3.0 ignores the three fields.
+    - Since bridge 0.4.3 (addon 0.4.7) it may also carry `drew`: the map layers the reply drew, the names of its ```` ```wowmap ```` `set` commands that are on the map after it (a later `clear` in the same reply, or the budget, can take one off), in the order it drew them, once each, at most 12. Okay on that reply, the HUD's or the banner's, follows its route (an ordered layer), else the one place it marked (a layer of one point); marks of several places with no order aren't followed. An older addon ignores it.
+  - `error` and `aborted` carry `chat`, `text` (plain language) and `kind`.
+
+**Budget:** at most 64 KB per file, filled in this order:
+1. Header, `gw`, `agents`, `chats`: at most 8 KB.
+2. `records`: at most 40 KB, and while the map rides at most what it leaves them (16 KB or more). Past that, the oldest reply bodies are replaced by their summary plus `more = <length>`; records are never dropped.
+3. `map`: for 3 minutes after a map change or a hello, and only if it fits. The bridge keeps the map within 40 KB of Lua (`map.mjs` `MAP_BYTES_MAX`; DREW-SY-04): past it the oldest layers go first, never the newest, then the newest one's notes, then its last stops, and `drew` is worked out after that, so it never names a layer the game can't have. The bridge says what went in a `map_block` line on the reply ("The map was too big for the game, so … was taken off it."). Before, a map inside the prompt's limits (1,500 points is 60 to 120 KB) was left out of the file with no word.
+
+**Encoding:** Lua string literals from `luaStr` (quotes, backslashes, newlines and every control byte escaped). Agent text has already had `|` doubled by the renderer, so it can't form a game escape (TB3). The encoder is fuzzed: a decoded slot equals its input and nothing escapes a string (§13).
+
+### 4.2 When the addon loads a slot
+
+It picks the next slot addon it hasn't loaded in this UI session, then:
+
+```lua
+NQA_SlotData = nil
+C_AddOns.LoadAddOn(name)
+-- then read NQA_SlotData
+```
+
+It loads a slot only when:
+
+1. A push bell pulses (§3), and it hasn't loaded in the last 1.5 s. After a load that brings a newer `bridge.push`, it draws a `seen` with `cur` and `p`. After one that brings none, the ring was a re-ring: the bridge missed that `seen` (or its counter restarted below the addon's, §3), so it draws the `seen` again: a missed `seen` then costs one more slot, not one per re-ring (while the capture keeps missing them, each re-ring still loads one). A slot in another protocol is not read, so none is drawn for it.
+2. Once 30 s after the hello went up with no push pulse, to settle the live self-test (§3).
+3. For progress text: only while the window is open on a chat busy for 30 s or more. At most one load per 60 s, 3 per run and 30 per UI session.
+4. Slot-only mode only: after a send, on the schedule 5, 12, 25 and 45 s; after that, every 30 s while that chat is busy (every 60 s once it has been busy for 5 minutes), at most 20 more loads per send. Again 3 s after a `stop`.
+5. Slot-only mode only: an idle check every 10 minutes.
+
+**Which slots a publish writes** (the slot window, systems plan SY-03): the slots the addon can load next and `NeverQuestAlone/Inbox.lua`. The ones it has passed, or can't reach before the next publish, hold `NQA_SlotData = nil`, so a load there applies nothing. The addon says where it is: `slot=` on its hello, and on a `seen` after every load. The bridge writes from that report to 8 slots above it, and writes again when a report reaches past what's written; nothing is guessed. An addon that doesn't report (an older one) has no window: every slot is written, which is correct, only heavier. So is every slot with no report read off the strip (a hello only from SavedVariables), or with `transport.slotWindow: false`.
+
+**Low slots:** at 25 or fewer free, a banner offers Reload; the click is the hardware event, and the banner is hidden in combat. At 0 the addon switches to reload mode until you reload (RV-4).
+
+### 4.3 Applying records
+
+For each record in `seq` order with `seq > db.cursor`, the addon applies it to its chat, then sets `db.cursor = seq`.
+- A reply for a chat with no pending send still applies (RC-6: subagent results).
+- `replay = 1` records apply silently.
+- Records for an unknown chat id create no chat; they're counted in `/bones diag` as orphans. The exception is the check-ins chat (`c0ffee0`), which the addon makes for them (a recap's reply arrives before any event this session).
+
+## 5. Reload path (`/bones mode reload`, stream mode, and the fallback at 0 free slots)
+
+- **Out:** the addon puts each keyed record in `db.outbox` as `{ key = "<key>", hex = "<hex of the full v2 record>" }` and asks for a reload through a button, since the click is the hardware event.
+  - The bridge watches `WTF/Account/<account>/SavedVariables/NeverQuestAlone.lua` (mtime) and reads every `hex` entry.
+  - It dedupes and acks exactly as for strip records. The ack shows in the next `Inbox.lua` as `bridge.acked`.
+- **In:** `NeverQuestAlone/Inbox.lua` (`NQA_Inbox`, the same table as a slot) is read at every login and `/reload`.
+- **Stream mode** (D6): sends always go this way, so no strip is ever drawn.
+- Unkeyed records (`hello`, the latest `seen`, the latest `state`) go into `db.outbox` with key = the nonce, one of each type per session.
+
+## 6. Test vectors
+
+`tests/fixtures/protocol-v2.json` holds shared vectors:
+- record strings with their parsed form: `hello` (with `sid`), `msg` with and without context and with `st`, `stop`, `patch`, `forget`, `seen` (with and without `p`), `state` (also deflated, `z=1`, with the JSON it inflates to) and `evt`, plus percent-encoding edge cases;
+- invalid records, among them a `state` with a send key or a chat;
+- a slot table (with `caps` and `stateSeq`) and its expected Lua text;
+- `worstState`: the addon's state for the worst case (30 quests of 6 objectives with multibyte names, quest points, full gear, 10 milestones) for a bridge with caps `z` and `qlog`: every quest, detail left out in the fit's order; `legacyWorstState`: the same for a bridge without `qlog`, within 2,800 bytes of JSON: 12-byte titles, professions and milestones waiting for the next state;
+- `fullLogState`: a full quest log at Forever's cap (40 quests under 15 zone headers and a hidden one, the last 1527 "Call of Fire", ready to turn in) as the addon sends it to a bridge with `z` and `qlog`. `tests/helpers/quest-log.mjs` builds its log.
+
+`tests/fixtures/event-level-up.json` is a level-up as the addon draws it (hello, state, evt); `node tools/nqa-replay.mjs tests/fixtures/event-level-up.json --dry-run` prints the exact send the core makes for it (`{chatId, idem, turn}`, the raw turn in `turn`), with no AI called.
+
+The bridge's JS tests and the addon's Lua tests (fengari) both read them, so neither side can drift.

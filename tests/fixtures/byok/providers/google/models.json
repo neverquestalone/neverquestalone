@@ -1,0 +1,52 @@
+{
+  "source": "Gemini OpenAI compatibility (https://ai.google.dev/gemini-api/docs/openai): GET /v1beta/openai/models; ids carry the models/ prefix. UNVERIFIED.",
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "object": "list",
+    "data": [
+      {
+        "id": "models/gemini-3.8-flash",
+        "object": "model",
+        "owned_by": "google"
+      },
+      {
+        "id": "models/gemini-3.7-flash",
+        "object": "model",
+        "owned_by": "google"
+      },
+      {
+        "id": "models/gemini-3.6-flash",
+        "object": "model",
+        "owned_by": "google"
+      },
+      {
+        "id": "models/gemini-3.5-flash",
+        "object": "model",
+        "owned_by": "google"
+      },
+      {
+        "id": "models/gemini-3.5-flash-lite",
+        "object": "model",
+        "owned_by": "google"
+      },
+      {
+        "id": "models/gemini-3.1-flash-lite",
+        "object": "model",
+        "owned_by": "google"
+      },
+      {
+        "id": "models/gemini-3.1-pro-preview",
+        "object": "model",
+        "owned_by": "google"
+      },
+      {
+        "id": "models/gemini-3-flash-preview",
+        "object": "model",
+        "owned_by": "google"
+      }
+    ]
+  }
+}

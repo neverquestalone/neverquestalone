@@ -1,0 +1,32 @@
+{
+  "name": "neverquestalone",
+  "productName": "NeverQuestAlone",
+  "version": "1.4.18",
+  "private": true,
+  "description": "The intelligent quest companion for World of Warcraft: Forever",
+  "license": "MIT",
+  "author": "The NeverQuestAlone authors",
+  "type": "module",
+  "main": "main.mjs",
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "scripts": {
+    "start": "electron .",
+    "start:mock": "NQA_MOCK_API=1 electron .",
+    "self-test": "electron . --self-test",
+    "icons": "node scripts/make-icons.mjs",
+    "pack": "electron-builder --dir",
+    "dist": "node scripts/dist.mjs",
+    "fuses": "electron-fuses read --app"
+  },
+  "devDependencies": {
+    "@electron/fuses": "2.1.3",
+    "electron": "44.5.1",
+    "electron-builder": "26.16.1"
+  },
+  "dependencies": {
+    "@napi-rs/keyring": "2.1.0",
+    "electron-updater": "6.8.9"
+  }
+}

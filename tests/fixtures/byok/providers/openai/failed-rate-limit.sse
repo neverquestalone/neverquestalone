@@ -1,0 +1,6 @@
+event: response.created
+data: {"type":"response.created","sequence_number":0,"response":{"id":"resp_FIXTURE","object":"response","status":"in_progress","model":"gpt-6-luna"}}
+
+event: response.failed
+data: {"type":"response.failed","sequence_number":2,"response":{"id":"resp_FIXTURE","status":"failed","error":{"code":"rate_limit_exceeded","message":"Rate limit reached. Please try again in 11.054s."}}}
+

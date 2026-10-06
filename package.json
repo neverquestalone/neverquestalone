@@ -1,0 +1,36 @@
+{
+  "name": "neverquestalone",
+  "version": "1.4.18",
+  "private": true,
+  "plugin": "wow",
+  "description": "NeverQuestAlone: the intelligent quest companion for World of Warcraft: Forever.",
+  "license": "MIT",
+  "author": "chelinho139 and The NeverQuestAlone authors",
+  "keywords": [
+    "world-of-warcraft",
+    "wow-addon",
+    "wow-forever",
+    "quest-companion",
+    "ai-companion",
+    "bring-your-own-key"
+  ],
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "scripts": {
+    "start": "npm --prefix app/desktop start",
+    "package:addon": "node tools/package-addon.mjs",
+    "test": "node tests/order_check.js addon/NeverQuestAlone && node tools/run-tests.mjs && node tests/codec_test.js",
+    "test:e2e": "node --test --test-concurrency=1 tests/byok/bridge_byok_e2e_test.mjs",
+    "probe": "python3 bridge/capture_x11.py --probe bridge/probe.png",
+    "capture:build": "node bridge/capture/build.mjs"
+  },
+  "devDependencies": {
+    "fengari": "^0.1.4",
+    "jpeg-js": "0.4.4",
+    "luaparse": "^0.3.1"
+  },
+  "dependencies": {
+    "@napi-rs/keyring": "2.1.0"
+  }
+}

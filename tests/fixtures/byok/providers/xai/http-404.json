@@ -1,0 +1,10 @@
+{
+  "status": 404,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "error": "The model grok-9 does not exist."
+  },
+  "source": "debugging page [S53]"
+}

@@ -1,0 +1,10 @@
+{
+  "status": 500,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "error": "Internal error."
+  },
+  "source": "no documented 5xx list"
+}

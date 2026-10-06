@@ -1,0 +1,15 @@
+{
+  "status": 400,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "error": {
+      "message": "This model's maximum context length is exceeded.",
+      "type": "invalid_request_error",
+      "param": null,
+      "code": "context_length_exceeded"
+    }
+  },
+  "source": "error-codes guide [S29]"
+}

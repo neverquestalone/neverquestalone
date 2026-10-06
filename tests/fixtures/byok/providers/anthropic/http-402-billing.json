@@ -1,0 +1,15 @@
+{
+  "status": 402,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "type": "error",
+    "error": {
+      "type": "billing_error",
+      "message": "There is an issue with your payment details."
+    },
+    "request_id": "req_011FIXTURE"
+  },
+  "source": "errors page [S4]"
+}

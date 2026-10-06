@@ -1,0 +1,25 @@
+## Interface: 16001
+## Title: NeverQuestAlone
+## Notes: • Ask anything, right in the game|n• Quest help, routes and gear advice|n• Your route drawn on the map|n• Quality-of-life helpers you turn on|n• Any AI, with or without the free NeverQuestAlone app
+## Author: NeverQuestAlone contributors (fork of chelinho139/wow-ai)
+## Version: 1.4.18
+## IconTexture: Interface\AddOns\NeverQuestAlone\Media\NeverQuestAlone
+## SavedVariables: NQADB, NQAMapDB
+
+Codec.lua
+Inbox.lua
+Store.lua
+Transport.lua
+Chats.lua
+Notify.lua
+UI.lua
+Commands.lua
+Map.lua
+MinimapPins.lua
+Companion.lua
+QoL.lua
+Paste.lua
+HUD.lua
+Tooltips.lua
+Chains.lua
+Settings.lua

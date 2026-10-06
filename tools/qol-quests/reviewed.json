@@ -1,0 +1,27 @@
+{
+	"about": "What the rules in generate.mjs can't see in cmangos.json, each checked on Wowhead Classic (the quest page and its players' comments). A kind here replaces the rules' kind for that quest; \"none\" leaves it off the list. generate.mjs refuses a review that only repeats the rules, and one for a quest cmangos.json no longer has.",
+	"accept": {
+		"434": { "kind": "event", "why": "Lescovar and Marzon walk to the garden and talk; the quest is to wait there, then fight them. The start script only walks and casts." },
+		"452": { "kind": "fight", "why": "Waves of Pyrewood elites attack right away. The hook starts Faerleia's event." },
+		"1173": { "kind": "fight", "why": "Mok'Morokk walks a few steps and turns on you: the quest is to beat him. The hook uses the escort code for his walk." },
+		"1249": { "kind": "fight", "why": "Tapoke Jahn and his bodyguard fight you as he leaves the inn. The hook uses the escort code for his walk." },
+		"1651": { "kind": "fight", "why": "Daphne walks home and three waves of Defias attack. The hook uses the escort code for her walk." },
+		"2845": { "kind": "escort", "why": "Shay follows you and wanders off; the quest is to bring her home (Warcraft Wiki's escort quests). The hook sends her start event." },
+		"2904": { "kind": "escort", "why": "Kernobee follows you out of Gnomeregan (Warcraft Wiki's escort quests). The hook sends his start event." },
+		"3463": { "kind": "none", "why": "Kalaran the Deceiver shows himself, talks and flies off along his path: a scene, no fight." },
+		"3525": { "kind": "fight", "why": "Belnistrasz starts his ritual and waves attack until it ends. The hook uses the escort code for his walk." },
+		"4021": { "kind": "fight", "why": "Kolkar waves attack Regthar's defenders right away. The hook starts his event." },
+		"4966": { "kind": "fight", "why": "Galak assassins attack Kanati as soon as she starts. The hook uses the escort code for her walk." },
+		"5162": { "kind": "flight", "why": "Haleh's Will throws you through the air, then the game carries you away (the start script casts it, then teleports)." },
+		"7046": { "kind": "event", "why": "Celebras walks to his altar and starts the ritual you assist. The start script only walks." },
+		"8447": { "kind": "event", "why": "Remulos leads you to the shrine and Malfurion appears; the quest is to wait for the ritual. The start script summons Malfurion, friendly." },
+		"8730": { "kind": "timed", "why": "Vaelastrasz starts the raid's five-hour timer to kill Nefarian. The hook sets the instance's timer." },
+		"8736": { "kind": "fight", "why": "Remulos walks to the lake and Eranikus attacks Nighthaven: a raid fight. The hook uses the escort code for his walk." }
+	},
+	"handin": {
+		"1371": { "kind": "none", "why": "Warug's target dummy appears and blows itself up: no fight." },
+		"1482": { "kind": "none", "why": "Images of Jugkar and Azrethoc act out a scene: no fight." },
+		"2521": { "kind": "none", "why": "Kum'isha's sphere scene with a Draenei refugee: no fight." },
+		"3463": { "kind": "none", "why": "Kalaran the Deceiver appears and flies off: a scene, no fight." }
+	}
+}

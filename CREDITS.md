@@ -51,7 +51,15 @@ NeverQuestAlone’s own [LICENSE](LICENSE) carries this notice and the fork’s 
 ## Data
 
 - **[models.dev](https://github.com/anomalyco/models.dev)** (MIT): the app’s price table uses its format, and the tool that updates the table reads its data.
-- **[cMaNGOS](https://github.com/cmangos)** (its classic-db and mangos-classic) and **[wago.tools](https://wago.tools)**: the quest facts behind Quality of Life’s lists of quests that start something when you accept or hand them in (an escort, a fight, a flight), which Auto Accept Quests and Auto Turn In Quests leave to you.
+- **[cMaNGOS](https://github.com/cmangos)**: Quality of Life’s lists of quests that start something when you accept or hand them in (an escort, a fight, a flight), which Auto Accept Quests and Auto Turn In Quests leave to you, are made from facts read out of its [classic-db](https://github.com/cmangos/classic-db) quest data (GNU General Public License, version 3) and [mangos-classic](https://github.com/cmangos/mangos-classic)’s quest scripts (version 2). Quest chains, where a quest leads (a dungeon, a raid or a rare or better reward) on the quest page and in what NeverQuestAlone knows, are made from classic-db’s quest, item, creature, game object and loot data. The facts are each quest’s number and name, how it links to other quests, who can take it, what accepting or handing it in starts, its rare or better rewards and where its objectives are, kept in `tools/qol-quests/cmangos.json` and `tools/quest-chains/cmangos.json` with the version of each source they were read from. No code or file of cMaNGOS’s is copied.
+- **[wago.tools](https://wago.tools)**: the game’s own tables as wago.tools publishes them. FactionTemplate and SpellEffect tell the Quality of Life lists which summoned creatures attack and which spells move you. Map, AreaTable, FactionTemplate, SkillLine, SkillLineAbility, SpellEquippedItems and CharBaseInfo tell the quest chains each dungeon’s name, where the quest log files a quest, which quest givers would attack you, what each class can equip and which classes each race can be. The tests check the addon’s lines against eight of the game’s interface labels from its GlobalStrings table.
+- The game’s quest names, words and data are Blizzard Entertainment’s.
+
+## What the MIT license covers
+
+The [MIT license](LICENSE) covers NeverQuestAlone’s code and its docs. It doesn’t cover the name NeverQuestAlone or its artwork: the skull logo and the app’s icons (`app/desktop/build/` and `app/desktop/assets/`), the pictures in the app (`app/desktop/renderer/img/`) and in the addon (`addon/NeverQuestAlone/Media/`), and the screenshots in `images/`. Their makers keep every right to them, so a fork brings its own name, icons and pictures. The screenshots also show World of Warcraft, which is Blizzard Entertainment’s.
+
+The app’s fonts, Inter and JetBrains Mono, are under the SIL Open Font License 1.1, with its text beside them in `app/desktop/renderer/fonts/`.
 
 ## Third-party notices
 

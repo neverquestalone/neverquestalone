@@ -1,0 +1,15 @@
+{
+  "status": 403,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "error": {
+      "message": "Country, region, or territory not supported",
+      "type": "invalid_request_error",
+      "param": null,
+      "code": "unsupported_country_region_territory"
+    }
+  },
+  "source": "error-codes guide [S29]; code string unconfirmed"
+}

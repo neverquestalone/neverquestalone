@@ -1,0 +1,275 @@
+# The tests, on every push and pull request: written by tools/shell-tree.mjs from the test.yml NeverQuestAlone
+# builds with, without its private jobs and without any secret. The token is read-only, and every action is
+# pinned to a commit SHA. Change it there, not here: each release rewrites this file.
+name: test
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: test-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: test (${{ matrix.os }}, ${{ matrix.shard }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: windows-latest, shard: 1/3 }
+          - { os: windows-latest, shard: 2/3 }
+          - { os: windows-latest, shard: 3/3 }
+          - { os: ubuntu-latest, shard: 1/2 }
+          - { os: ubuntu-latest, shard: 2/2 }
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+      - name: LuaJIT, a real Lua 5.1 (the KY-10 and keycheck twins, the SavedVariables bytes; SY-23)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update -q && sudo apt-get install -y -q luajit && luajit -v
+      - run: npm ci --ignore-scripts
+      - name: npm test, shard ${{ matrix.shard }} (tools/test-shard.mjs)
+        run: node tools/test-shard.mjs ${{ matrix.shard }}
+        env:
+          CC: ${{ runner.os == 'Windows' && 'gcc' || '' }}
+      - name: The real-time end-to-end run on Windows (npm run test:e2e; SY-15)
+        if: runner.os == 'Windows' && matrix.shard == '1/3'
+        run: npm run test:e2e
+
+  capture-windows:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: The pinned zig's tarball (kept between runs; fetch-zig.sh checks its SHA-256 every time)
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/zig-tarball
+          key: zig-tarball-${{ hashFiles('bridge/capture/windows/build.sh') }}
+      - name: Zig (pinned, checksum checked)
+        env:
+          ZIG_TARBALL_CACHE: ${{ runner.temp }}/zig-tarball
+        run: bridge/capture/windows/fetch-zig.sh "$RUNNER_TEMP/zig" >> "$GITHUB_ENV"
+      - name: Zig's build cache (this job only; release.yml's build and the next job start from nothing)
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/zig-global-cache
+          key: zig-global-cache-x86_64-windows-gnu-${{ hashFiles('bridge/capture/windows/build.sh') }}
+      - name: Build once, from zig's cache (no networking DLL)
+        env:
+          ZIG_GLOBAL_CACHE_DIR: ${{ runner.temp }}/zig-global-cache
+          WC_ONE_BUILD: '1'
+        run: bridge/capture/windows/build.sh
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: capture-windows-helper-test
+          path: bridge/capture/windows/build/
+          if-no-files-found: error
+          retention-days: 3
+
+  capture-windows-reproducible:
+    needs: capture-windows
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: The pinned zig's tarball (kept between runs; fetch-zig.sh checks its SHA-256 every time)
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/zig-tarball
+          key: zig-tarball-${{ hashFiles('bridge/capture/windows/build.sh') }}
+      - name: Zig (pinned, checksum checked)
+        env:
+          ZIG_TARBALL_CACHE: ${{ runner.temp }}/zig-tarball
+        run: bridge/capture/windows/fetch-zig.sh "$RUNNER_TEMP/zig" >> "$GITHUB_ENV"
+      - name: Build twice from nothing (reproducible; no networking DLL)
+        run: bridge/capture/windows/build.sh
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: capture-windows-helper-test
+          path: ${{ runner.temp }}/cached
+      - name: The build from zig's cache is the same bytes
+        run: |
+          cat bridge/capture/windows/build/nqa-capture.exe.sha256 "$RUNNER_TEMP/cached/nqa-capture.exe.sha256"
+          if ! cmp bridge/capture/windows/build/nqa-capture.exe "$RUNNER_TEMP/cached/nqa-capture.exe"; then
+            echo "::error::the helper capture-windows built from zig's cache (the one windows-smoke tests) differs from a build from nothing"
+            exit 1
+          fi
+
+  windows-smoke:
+    needs: capture-windows
+    runs-on: windows-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            app/desktop/package-lock.json
+      - run: npm ci --ignore-scripts
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: capture-windows-helper-test
+          path: bridge/capture/windows/build
+      - name: Where a self-test's crash dumps go (NQA_SELF_TEST_CRASHES)
+        run: echo "NQA_SELF_TEST_CRASHES=$(node -e "const p = require('path'); console.log(p.join(require('os').tmpdir(), 'nqa-self-test-crashes').split(p.sep).join('/'))")" >> "$GITHUB_ENV"
+      - name: The helper also compiles natively with the runner's MinGW-w64 gcc (-Werror)
+        env:
+          WC_BUILD_DIR: build/native
+        run: bridge/capture/windows/build.sh --native
+      - name: The release helper, NTFS, Credential Manager and folders on real Windows
+        env:
+          CC: gcc
+          NQA_REQUIRE_HELPER: '1'
+          NQA_TEST_REAL_KEYCHAIN: '1'
+        run: >-
+          node --test --test-concurrency=1 --test-reporter=spec
+          tests/byok/windows_smoke_test.mjs tests/byok/fsretry_test.mjs
+          tests/byok/capture_platform_test.mjs tests/byok/capture_windows_decoder_test.mjs
+          tests/byok/keystore_test.mjs
+      - name: What a publish costs on this NTFS disk, in the slot window and across every slot (SY-03)
+        run: |
+          powershell.exe -NoProfile -Command "try { 'Defender real-time scanning: ' + (Get-MpComputerStatus).RealTimeProtectionEnabled } catch { 'Defender real-time scanning: unknown' }" || true
+          {
+            echo '### What a publish costs on Windows (SY-03)'
+            echo '```'
+            node tools/bench-publish.mjs --mode window --runs 60
+            node tools/bench-publish.mjs --mode full --runs 60
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: What a typed turn costs the app's main thread on this NTFS disk (SY-27)
+        run: |
+          {
+            echo '### What a typed turn costs on Windows (SY-27)'
+            echo '```'
+            node tools/bench-turn.mjs --turns 5
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+      - run: npm ci --ignore-scripts
+        working-directory: app/desktop
+      - name: A throwaway code-signing certificate that only this runner trusts (the signing dry run; SY-20)
+        shell: pwsh
+        run: |
+          $subject = 'CN=NeverQuestAlone CI, O=NeverQuestAlone contributors'
+          $cert = New-SelfSignedCertificate -Type CodeSigningCert -Subject $subject -CertStoreLocation Cert:\CurrentUser\My -KeyExportPolicy Exportable -KeyAlgorithm RSA -KeyLength 3072 -HashAlgorithm SHA256 -NotAfter (Get-Date).AddDays(2)
+          $password = [Convert]::ToHexString([Security.Cryptography.RandomNumberGenerator]::GetBytes(24))
+          Write-Output "::add-mask::$password"
+          $pfx = Join-Path $env:RUNNER_TEMP 'ci-signing.pfx'
+          $cer = Join-Path $env:RUNNER_TEMP 'ci-signing.cer'
+          Export-PfxCertificate -Cert $cert -FilePath $pfx -Password (ConvertTo-SecureString $password -AsPlainText -Force) | Out-Null
+          Export-Certificate -Cert $cert -FilePath $cer | Out-Null
+          Import-Certificate -FilePath $cer -CertStoreLocation Cert:\LocalMachine\Root | Out-Null
+          "CSC_LINK=$pfx", "CSC_KEY_PASSWORD=$password", "NQA_PUBLISHER_NAME=$($cert.Subject)" | Out-File -Append -Encoding utf8 -FilePath $env:GITHUB_ENV
+          Write-Output "signing as: $($cert.Subject)"
+      - name: Package (NSIS), signed through scripts/dist.mjs as a release is (SY-20)
+        working-directory: app/desktop
+        run: node scripts/dist.mjs --win nsis --x64 --publish never
+      - name: The release's signature gate (tools/check-signatures.ps1, as release.yml runs it; SY-20)
+        shell: pwsh
+        run: ./tools/check-signatures.ps1 -Path app/desktop/dist
+      - name: The update feed pins the publisher (as release.yml checks a signed build, TH18)
+        run: |
+          f=app/desktop/dist/win-unpacked/resources/app-update.yml
+          test -f "$f" || { echo "::error::no app-update.yml in the build"; exit 1; }
+          grep -q '^publisherName:' "$f" || { echo "::error::app-update.yml pins no publisherName"; exit 1; }
+          grep -A1 '^publisherName:' "$f"
+          grep -qF -- "$NQA_PUBLISHER_NAME" "$f" || { echo "::error::app-update.yml pins another publisher than the certificate's subject"; exit 1; }
+      - name: The players' own check on this signed installer (tools/check-update-signature.mjs, as release.yml runs it; code health AP-07)
+        run: node tools/check-update-signature.mjs app/desktop/dist
+      - name: The updater on real Windows, electron-updater's own classes and the installer check with a real PowerShell (SY-21)
+        env:
+          NQA_REQUIRE_UPDATER: '1'
+          NQA_REQUIRE_HELPER: '1'
+        run: |
+          NQA_SIGNED_FILE="$(ls app/desktop/dist/NeverQuestAlone-Setup-*.exe | head -1)"
+          export NQA_SIGNED_FILE NQA_SIGNED_PUBLISHER="$NQA_PUBLISHER_NAME"
+          node --test --test-concurrency=1 --test-reporter=spec tests/byok/app_updater_test.mjs tests/byok/updater_windows_test.mjs
+      - name: The previous version's installer, for the update in place (SY-25)
+        working-directory: app/desktop
+        env:
+          ELECTRON_BUILDER_COMPRESSION_LEVEL: '0'
+        run: node scripts/dist.mjs --win nsis --x64 --publish never -c.extraMetadata.version=0.0.0-previous.1 -c.compression=store -c.directories.output=dist-previous
+      - name: Install, self-test and uninstall for real, with a fake WoW folder beside it, and an update in place (SY-01, SY-25, audit CV-07)
+        env:
+          NQA_REQUIRE_INSTALLER: '1'
+        run: |
+          NQA_INSTALLER="$(ls app/desktop/dist/NeverQuestAlone-Setup-*.exe | head -1)"
+          NQA_PREVIOUS_INSTALLER="$(ls app/desktop/dist-previous/NeverQuestAlone-Setup-*.exe | head -1)"
+          export NQA_INSTALLER NQA_PREVIOUS_INSTALLER
+          node --test --test-concurrency=1 --test-reporter=spec tests/byok/windows_install_test.mjs
+      - name: Fuses (SC-9)
+        run: node tools/check-fuses.mjs app/desktop/dist/win-unpacked
+      - name: The packaged app's self-test and its real quit (the real bridge from inside app.asar; SY-102-2)
+        run: node app/desktop/scripts/self-test.mjs "app/desktop/dist/win-unpacked/NeverQuestAlone.exe"
+      - name: Memory with the window shown and with the tray alone, private bytes of every app process (SY-11)
+        run: node app/desktop/scripts/footprint.mjs "app/desktop/dist/win-unpacked/NeverQuestAlone.exe"
+
+  supply-chain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          package-manager-cache: false
+      - name: Every locked version is 7 days old (SC-4; audit LS-08, code health AP-09)
+        run: node tools/check-release-age.mjs
+      - name: No high or critical advisory in what ships, nor a moderate one in electron (npm audit --omit=dev, both lockfiles, with dev for electron, tools/audit-allow.json; code health AP-09, SR-04)
+        run: node tools/check-audit.mjs
+
+  capture-mac:
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+      - name: Build the helper (swift build -c release)
+        run: swift --version && swift build -c release --package-path bridge/capture/mac
+      - name: Build it as the app, this build's and the public build's, ad hoc (build-app.sh; SY-26)
+        run: |
+          bridge/capture/mac/build-app.sh --adhoc
+          bridge/capture/mac/build-app.sh --adhoc --public
+          for pair in "build:bridge/capture/mac/BUNDLE_ID" "build-public:app/desktop/build/bridge/capture/mac/BUNDLE_ID"; do
+            app="$(ls -d "bridge/capture/mac/${pair%%:*}"/*.app)"
+            want="$(tr -d '[:space:]' < "${pair#*:}")"
+            got="$(plutil -extract CFBundleIdentifier raw "$app/Contents/Info.plist")"
+            codesign --verify --strict "$app"
+            echo "$app: $got"
+            [ "$got" = "$want" ] || { echo "::error::$app has bundle id $got, not $want"; exit 1; }
+          done
+      - run: npm ci --ignore-scripts
+      - name: The helper's tests (tests/capture_mac_test.js)
+        run: node --test --test-reporter=spec tests/capture_mac_test.js

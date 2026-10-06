@@ -1,0 +1,78 @@
+# Known-OK lines for tools/scrub-scan.mjs (B3.0, B6.1): "<path> <pattern> <id>" per line.
+#   path     the path the scanner prints; * matches within a folder, ** across folders,
+#            and **/ also matches no folder.
+#            A commit or tag hit's path is "commit" or "tag".
+#   pattern  a pattern name (node tools/scrub-scan.mjs --list), or * for any.
+#            "unscanned" entries let --strict pass a file the scanner can't read.
+#   id       the id printed with the hit, or * for every line of that path. Use * rarely.
+#            The id is HMAC-SHA256 of the trimmed line keyed by the private terms file's
+#            id-key (first 12 hex), so it names no line to anyone without that key. A new
+#            id-key changes every id: rerun the scan and update the entries.
+# An entry stops matching when its line changes, so a changed line is reviewed again.
+# Only paths, pattern names and ids go here, never the values themselves.
+
+# npm's deprecation notice for an old glob, as the registry wrote it into the app's lockfile: the
+# package author's public address, which names no one of ours. That one line only.
+app/desktop/package-lock.json email 707fa501fca6
+# A signed Mac build: Apple's code signature on each Mach-O carries the Developer ID certificate,
+# whose subject is the signer's legal name. That's public by design (every signed Mac app shows it,
+# codesign -dvv prints it), and it can't be left out of a signed build. The id is that one
+# certificate line (the signed build of 2026-09-29, release run 36629980754, found 64 of it and
+# nothing else in the binaries), so another certificate, or the name anywhere else, still fails.
+# The code signature is read as text whatever its entropy, its page hashes aside (code health EX-06 /
+# signature regions): 1.4.1's arm64 app shows this one id in each of its 16 Mach-Os (17 lines, the
+# capture helper having two slices) and nothing else.
+# The Info.plist copyright names "The NeverQuestAlone authors" and needs no entry.
+**/NeverQuestAlone.app/Contents/MacOS/NeverQuestAlone name 56d1c11058b5
+**/NeverQuestAlone.app/Contents/Frameworks/** name 56d1c11058b5
+**/NeverQuestAlone.app/Contents/Resources/NeverQuestAlone*Capture.app/Contents/MacOS/* name 56d1c11058b5
+**/NeverQuestAlone.app/Contents/Resources/app.asar.unpacked/node_modules/@napi-rs/keyring-darwin-*/keyring.darwin-*.node name 56d1c11058b5
+
+# Build outputs (release.yml's scans; the first dry run of it, SY-16, found these): what Electron and
+# Chromium ship as they come, and the npm packages inside app.asar, carry their authors' and
+# projects' addresses, which name no one of ours. The email pattern only: every other pattern and
+# the private terms still apply there, and our own files in app.asar (src/, bridge/, addon/,
+# renderer/) have no entry.
+**/LICENSES.chromium.html email *
+**/Electron*Framework.framework/Versions/A/Electron*Framework email *
+**/Electron*Framework.framework/Versions/A/Helpers/chrome_crashpad_handler email *
+**/win-unpacked/NeverQuestAlone.exe email *
+**/app.asar/node_modules/** email *
+# The NSIS installer holds win-unpacked LZMA-compressed (scanned unpacked, above). Its compressed
+# bytes, read as strings, spelled address-shaped runs and once a short private name by chance (release
+# run 37072139675, 1.3.1); the scanner no longer reads short runs in compressed bytes as text (code
+# health AP-06), so no entry here turns a pattern off for the whole installer.
+
+# A signed Windows build (Azure Artifact Signing, from 1.2.0): electron-builder signs every PE it
+# ships, and each Authenticode signature carries the certificate, whose subject is the signer's
+# legal name. That's public by design (Windows shows it as the publisher), and it can't be left out
+# of a signed build. Its two lines (the ids) are all the signed build of 2026-10-02 (release run
+# 37050891739, attempt 2) found in the binaries: the exe, the DLLs, the helpers, the keyring addon and
+# the installer. The scanner reads a PE's certificate table as text whatever its entropy (code health
+# EX-06 / signature regions), so both ids are expected in every signed PE and Setup, each twice
+# (+0x74C and +0x762 in the table, again at +0xDE7 and +0xDFD): 1.4.1's 11 signed PEs show 44 lines,
+# these two ids and nothing else. Before, the entropy gate's 4 KB blocks (AP-06) decided per build.
+# In 1.4.0 the exe's table sat at 0xEA68E00: its signer runs lay in a block of certificate bytes
+# alone, were skipped, and the exe's and the installer's lines went as unused (the signed 1.4.0
+# rehearsal, release run 37121557904). In 1.4.2 it sat at 0xEA6A600: the block took in 1,536 bytes
+# before the table, measured under 7.5 bits a byte, was read, and the signed rehearsal failed
+# (release run 37155436296). The cause was that block alignment, not EX-06's UTF-8 runs: the scanner
+# before them fails 1.4.2 the same way.
+# app-update.yml pins the same name as publisherName, so electron-updater checks a downloaded
+# installer's signer (TH18): its one line. Another certificate, or the name anywhere else, still fails.
+**/win-unpacked/*.exe name 254a5596a08c
+**/win-unpacked/*.exe name 28c5f4169279
+**/NeverQuestAlone-Setup*.exe name 254a5596a08c
+**/NeverQuestAlone-Setup*.exe name 28c5f4169279
+**/win-unpacked/*.dll name 254a5596a08c
+**/win-unpacked/*.dll name 28c5f4169279
+**/win-unpacked/resources/**/*.exe name 254a5596a08c
+**/win-unpacked/resources/**/*.exe name 28c5f4169279
+**/win-unpacked/resources/app.asar.unpacked/node_modules/@napi-rs/keyring-win32-*/keyring.win32-*.node name 254a5596a08c
+**/win-unpacked/resources/app.asar.unpacked/node_modules/@napi-rs/keyring-win32-*/keyring.win32-*.node name 28c5f4169279
+**/win-unpacked/resources/app-update.yml name 28a472889edb
+# The landing page's media (site/, and its published copy at neverquestalone.com): two short
+# email-shaped byte runs inside compressed AV1 and AVIF data, which name no one. Exactly these two
+# files and runs; a re-encode changes the id, so a new run is reviewed again.
+**/assets/hero/hero-1280-av1.mp4 email d498e6b53a8b
+**/assets/shots/hud-route-960.avif email 657d7fe7c583

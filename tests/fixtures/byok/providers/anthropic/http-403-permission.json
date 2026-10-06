@@ -1,0 +1,15 @@
+{
+  "status": 403,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "type": "error",
+    "error": {
+      "type": "permission_error",
+      "message": "Your API key does not have permission to use the specified resource."
+    },
+    "request_id": "req_011FIXTURE"
+  },
+  "source": "errors page [S4]"
+}

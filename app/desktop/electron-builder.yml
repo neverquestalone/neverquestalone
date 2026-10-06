@@ -1,0 +1,234 @@
+# NeverQuestAlone packaging (BYOK PRD §11.1 installers and signing, §11.2
+# SC-9, §11.5 DB12; PF-2, PF-4).
+#
+# Signing comes only from environment variables, never from this file or a
+# keychain the build happens to find: CSC_LINK / CSC_KEY_PASSWORD (macOS
+# Developer ID, or a Windows OV certificate), Azure Artifact Signing through
+# scripts/dist.mjs (AZURE_* plus NQA_AZURE_*, and the pinned TrustedSigning
+# module tools/stage-trusted-signing.ps1 stages; scripts/sign-azure.cjs signs
+# with it), APPLE_* for notarization.
+# With none set, the build is unsigned and scripts/fuses.cjs says so in the log.
+# scripts/fuses.cjs also flips Electron's fuses after packing, before signing.
+#
+# The app's names come from its plugin's identity.json (open-shell lane 2a), through
+# scripts/plugin-config.mjs, which this file extends: appId, productName,
+# copyright, the package.json's name and plugin, the plugin's identity.json in
+# app.asar, the NSIS guid, the capture helper in Resources, and the update feed
+# (publish). It also refuses a signed build under names that aren't the app's own.
+extends: ./scripts/plugin-config.mjs
+
+directories:
+  output: dist
+  buildResources: build
+
+asar: true
+afterPack: scripts/fuses.cjs
+
+# English only (systems plan Batch 5, SY-10): the app's words are English, so
+# Chromium's other 219 locale packs (about 47 MB installed per architecture on
+# macOS) stay out. "en-US" keeps en.lproj on macOS and en-US.pak on Windows,
+# and no other English pack (electron-builder keeps a pack named by a prefix
+# of a wanted locale: en for en-US). "en" alone dropped Windows' only English
+# pack before electron-builder 26.16, and from 26.16 on keeps en-GB as well.
+# Chromium's own menus and dialogs are English.
+electronLanguages:
+  - en-US
+
+files:
+  - package.json
+  - main.mjs
+  - preload.cjs
+  - ipc.mjs
+  - updater.mjs
+  - src/**/*
+  # Development only (systems plan Batch 5, SY-09): the screenshot mode, its
+  # probe and the mock API it drives; main.mjs and src/api-loader.mjs import them
+  # only in an unpackaged run. The packaged --self-test uses the real bridge.
+  - "!src/screenshots.mjs"
+  - "!src/shot-probe.mjs"
+  - "!src/mock-api.mjs"
+  - renderer/**/*
+  - assets/**/*
+  - "!**/*.test.*"
+  - "!**/*_test.*"
+  - "!**/test/**"
+  - "!**/tests/**"
+  - "!**/__tests__/**"
+  - "!**/*.map"
+  # The project's MIT notice ships inside the app (§14.4); the About page reads it.
+  - from: ../..
+    to: .
+    filter:
+      - LICENSE
+  # The bridge main runs in-process (src/api-loader.mjs → bridge/byok/boot.mjs):
+  # exactly the modules and data boot imports and reads, inside app.asar, so
+  # OnlyLoadAppFromAsar and the asar integrity check cover every line of it.
+  # (Not the keychain binding's native .node, which Electron loads only from
+  # app.asar.unpacked, nor the capture helpers in Resources: the Mac app's code
+  # signature covers those; see src/api-loader.mjs.)
+  # Never bridge/config.json (a checkout's own settings) or anything else, nor the
+  # strip decoder and picture readers only the development screenshot proof uses
+  # (transport/strip.mjs, images.mjs; tools/shotproof; code health BR-26).
+  - from: ../../bridge
+    to: bridge
+    filter:
+      - service.mjs
+      - config.mjs
+      - identity.mjs
+      - files.mjs
+      - write-queue.mjs
+      - app/*.mjs
+      - transport/*.mjs
+      - "!transport/strip.mjs"
+      - "!transport/images.mjs"
+      - byok/**/*.mjs
+      - byok/providers/manifests/*.json
+      - byok/usage/prices.json
+      - byok/runtime/pack.md
+  # The bridge is ES modules only (code health BR-24), so it needs no package.json of
+  # its own under the app's "type": "module". The capture helper's bundle id is
+  # NeverQuestAlone's own (build/bridge/capture/mac/BUNDLE_ID), never a
+  # checkout's: the code requirement (transport/capture.mjs) and the
+  # uninstall's Screen Recording reset read it (final review L3-4).
+  - from: build/bridge
+    to: bridge
+    filter:
+      - capture/mac/BUNDLE_ID
+  # The addon the app installs into WoW (§11.4; bridge/byok/wow.mjs ADDON_SOURCE), with
+  # its Media: the icon its TOC names (## IconTexture: Media/NeverQuestAlone.tga) and Bones's portraits;
+  # and its NOTICE.txt, which goes wherever that art goes: the MIT license doesn't cover it.
+  - from: ../../addon/NeverQuestAlone
+    to: addon/NeverQuestAlone
+    filter:
+      - "**/*.lua"
+      - "**/*.toc"
+      - "**/*.xml"
+      - "**/*.tga"
+      - "**/*.txt"
+
+# The icons are glass Bones (2026-10-02: winking Bones "Ember" in smoked glass), its kit's (its ship/ folder, copied in by
+# scripts/make-icons.mjs, which pins every file): the .icns for macOS 11 to 15, the asset catalog for
+# macOS 26+, the .ico at every size, the 1024 px PNG for Linux.
+mac:
+  category: public.app-category.games
+  icon: build/icon.icns
+  # A universal DMG for the first download (one link for every Mac), and one
+  # update zip per architecture, which latest-mac.yml lists and electron-updater
+  # picks by arch: about 122 MB per update instead of a universal zip's about
+  # 210-250 MB (systems plan Batch 5, SY-10). release.yml checks all three apps.
+  target:
+    - target: dmg
+      arch: universal
+    - target: zip
+      arch:
+        - arm64
+        - x64
+  # The universal merge (@electron/universal) refuses a Mach-O file that is the
+  # same in both halves unless named here: the keychain bindings are one file per
+  # architecture (release.yml installs both), so each is identical in the two.
+  # The capture helper is not listed: it must itself be universal.
+  x64ArchFiles: "Contents/Resources/app.asar.unpacked/node_modules/@napi-rs/keyring-darwin-*/keyring.darwin-*.node"
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+  # The capture helper gets no entitlements (security review SR-06). electron-builder
+  # would sign it with entitlementsInherit's allow-jit, which Electron's own helpers
+  # need and it doesn't, so signIgnore (a regular expression on each file's full
+  # path; scripts/plugin-config.mjs) leaves it, and everything in it, to the sign
+  # hook: scripts/sign-mac.cjs signs it first with the app's identity, the hardened
+  # runtime and nothing else, then runs electron-builder's own signing over the rest
+  # of the app. tools/check-release.mjs checks both after the build.
+  sign: scripts/sign-mac.cjs
+  # The capture helper (fork PRD §9.10; public §11.1) runs as its own app, so
+  # it sits beside app.asar in Resources, not inside it (src/api-loader.mjs
+  # CAPTURE_HELPERS; its extraResources entry is scripts/plugin-config.mjs's, named
+  # as the identity names it). Built by bridge/capture/mac/build-app.sh
+  # (scripts/dist.mjs builds it when it's missing); the sign hook re-signs it with
+  # the app's Developer ID, and boot accepts the app's own team for it. A build
+  # without it fails (scripts/fuses.cjs).
+  #
+  # The icon's asset catalog (Contents/Resources/Assets.car, compiled by actool from the kit's
+  # Assets.xcassets): with CFBundleIconName = AppIcon (extendInfo below), macOS 26+ draws the 16 and 32 px
+  # sizes full-bleed from it; with the .icns alone it shrinks the icon onto a plate. macOS 11 to 15 read
+  # CFBundleIconFile (the .icns, mac.icon above).
+  extraResources:
+    - from: build/Assets.car
+      to: Assets.car
+  # notarize is left unset: electron-builder notarizes when APPLE_* are set.
+  # A tray app: no Dock icon at launch or at login (nothing appears by itself).
+  # main.mjs shows the Dock icon while the settings window is open.
+  extendInfo:
+    LSUIElement: true
+    CFBundleIconName: AppIcon
+
+dmg:
+  title: "${productName}"
+  # The DMG itself is signed with the app's Developer ID (launch 1.0.0: v1.0.0's DMG was notarized
+  # and stapled but unsigned, so `spctl -a -t install` rejected it). An unsigned build skips it
+  # (CSC_IDENTITY_AUTO_DISCOVERY=false). release.yml then notarizes and staples it and checks it.
+  sign: true
+  # No update info for the DMG (code health cut list): a Mac's updater downloads only the
+  # per-architecture zips (electron-updater's MacUpdater: findFile(files, "zip", ["pkg", "dmg"]),
+  # and latest-mac.yml always lists both), so the DMG's entry there was never read, and stapling the
+  # notarization ticket made it stale. This leaves it and its unused blockmap out; release.yml
+  # fails a feed that lists a DMG.
+  writeUpdateInfo: false
+
+win:
+  icon: build/icon.ico
+  target:
+    - nsis
+  # Sign the keychain binding and Electron's own .dll files too, not only .exe
+  # files (electron-builder's default): Smart App Control blocks an unsigned
+  # .node, and then no key can be saved (systems plan Batch 1, SY-01); signing
+  # the .dll files (ffmpeg, libEGL, libGLESv2, vk_swiftshader, vulkan-1, the
+  # d3d/dx compilers, all top level) takes that question off the rig. release.yml
+  # refuses a build unless every .exe, .node and .dll is Valid; test.yml's
+  # windows-smoke job lists them.
+  signExts:
+    - .node
+    - .dll
+  # The capture helper (§11.3), built by bridge/capture/windows/build.sh; beside
+  # app.asar, since nothing runs from inside it. A build without it fails. Its
+  # folder with a filter, never the file itself: electron-builder signs an extra
+  # .exe only while it copies a folder, and a single-file entry would ship the
+  # helper unsigned (systems critic SY-20). The filter leaves build/native (the
+  # MinGW check build) out.
+  extraResources:
+    - from: ../../bridge/capture/windows/build
+      to: capture
+      filter:
+        - nqa-capture.exe
+
+nsis:
+  # guid: the identity's nsisGuid (scripts/plugin-config.mjs). NeverQuestAlone's is pinned
+  # (rename spec §1.13, H23): the value electron-builder derives from appId
+  # com.neverquestalone.app (UUIDv5 in its namespace), written out so a later appId
+  # edit can't install side by side. Frozen: tests/frozen_names_test.mjs.
+  oneClick: true
+  perMachine: false
+  allowElevation: false
+  deleteAppDataOnUninstall: true
+  artifactName: "${productName}-Setup-${version}.${ext}"
+  # customUnInstall: the login item, the saved keys and the update cache (§16.3).
+  include: build/installer.nsh
+
+# Linux ships from source only (systems plan D6): no AppImage or .deb, and no
+# release job. `electron-builder --linux dir` still makes a folder to try.
+linux:
+  icon: build/icon.png
+  category: Game
+  synopsis: "The intelligent quest companion for World of Warcraft®: Forever"
+  target:
+    - dir
+  # The X11 capture script (§11.1), run by python3, so beside app.asar, not in
+  # it. A build without it fails.
+  extraResources:
+    - from: ../../bridge/capture_x11.py
+      to: capture/capture_x11.py
+
+# Updates: a public GitHub repository's releases (§11.5), the identity's releases,
+# which release.yml's publish job uploads to (RELEASES_REPO; a test checks): publish is
+# scripts/plugin-config.mjs's, the same owner and repo the app's updater reads
+# (updater.mjs). No token is ever configured or shipped.

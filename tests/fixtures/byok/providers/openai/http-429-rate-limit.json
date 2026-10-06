@@ -1,0 +1,21 @@
+{
+  "status": 429,
+  "headers": {
+    "content-type": "application/json",
+    "x-ratelimit-limit-requests": "500",
+    "x-ratelimit-remaining-requests": "0",
+    "x-ratelimit-reset-requests": "6m0s",
+    "x-ratelimit-limit-tokens": "500000",
+    "x-ratelimit-remaining-tokens": "499000",
+    "x-ratelimit-reset-tokens": "1s"
+  },
+  "body": {
+    "error": {
+      "message": "Rate limit reached for gpt-6-luna. Please try again in 11.054s.",
+      "type": "tokens",
+      "param": null,
+      "code": "rate_limit_exceeded"
+    }
+  },
+  "source": "rate-limits guide [S28]; no retry-after, so the exhausted bucket's reset is used"
+}

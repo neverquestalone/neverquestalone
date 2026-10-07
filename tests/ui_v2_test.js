@@ -1998,6 +1998,74 @@ test('HUD: the arrow turns green when you get there and hides with no bearing; w
   assert.equal(restates('', ['Prairie Wolf Paw']), 'false');
 });
 
+test('HUD: a quest that\'s a step of a chain shows where it leads under its name (a ready quest\'s or one to pick up\'s under its row), with its payoff\'s icon on the bullets\' column, in words with no hover and no link; none for a quest that leads nowhere, a ready last step to a place, or with Quest Chains off; the list closes up', () => {
+  // A human warrior (the records by class need UnitClass's id), with the reward icons the game gives.
+  const vm = confirmHello(newVM({ db: WELCOMED, extra: MAP_STUB + `
+function UnitRace() return "Human", "Human", 1 end
+function UnitClass() return "Warrior", "WARRIOR", 1 end
+C_Item.GetItemIconByID = function(id) return 1000 + id end` }).login());
+  vm.run(`NS.MapShared.navView = { layer = "w", title = "Westfall loop", index = 1, total = 2, gen = 1, rev = 1, label = "1. Sentinel Hill", note = "",
+    quests = { { id = 6822, title = "The Molten Core", state = "ready", what = "complete, turn it in", objectives = {} },
+      { id = 65, title = "The Defias Brotherhood", state = "active", objectives = {} },
+      { id = 1718, title = "The Islander", state = "active", objectives = { { text = "Trophy of the Islander: 0/1", finished = false } } },
+      { id = 871, title = "Disrupt the Attacks", state = "active", objectives = { { text = "1/8 Razormane Water Seeker slain", finished = false } } } },
+    dist = 200, bearing = 1 }; NS.HUD.Render()`);
+  const shown = () => Object.values(vm.json(`(function() local o = {} for _, c in ipairs(NS.HUD.h.qChains) do if c.text.shown then
+    o[#o + 1] = { c.text.text, c.mark.shown and (c.mark.atlas or c.mark.texture) or false } end end return o end)()`));
+  const lines = shown();
+  assert.deepEqual(lines.map(l => l[0]), [
+    'Leads to |cffffd100Molten Core|r · step 3 of 5',
+    'Leads to |cffffd100The Deadmines|r · step 1 of 7',
+    'Leads to |cff0070ddWhirlwind Axe|r or 2 more · step 1 of 6',
+  ], 'the quest page\'s words, the place in the HUD\'s gold and a reward\'s name in its quality\'s colour; nothing for Disrupt the Attacks');
+  assert.ok(lines.every(l => !/\|H|\[/.test(l[0])), 'no link and no brackets: nothing on the HUD can be hovered or shift-clicked [UC-01]');
+  assert.deepEqual(lines.map(l => l[1]), ['questlog-questtypeicon-raid', 'questlog-questtypeicon-dungeon', 1000 + 6975],
+    'the quest log\'s raid and dungeon marks, the reward\'s own icon');
+  assert.deepEqual(vm.json('NS.HUD.h.qChains[3].mark.texCoord'), [0.08, 0.92, 0.08, 0.92], 'the icon without its border');
+  assert.deepEqual(vm.json('NS.HUD.h.qChains[1].text.textColor'), [0.6, 0.6, 0.6], 'the meta style: grey, the place in gold');
+  // 4 under its name or row, on the objectives' text column to the right gutter (the mark on the bullets'); the list 4 under it.
+  const top = e => -vm.num(`${e}.points.TOPLEFT.y`);
+  const x = e => vm.num(`${e}.points.TOPLEFT.x`);
+  assert.equal(top('NS.HUD.h.qChains[1].text'), top('NS.HUD.h.qRows[1].text') + 14 + 4, 'under the ready quest\'s row (its bullet\'s 12 high, as rows are)');
+  assert.equal(top('NS.HUD.h.qChains[2].text'), top('NS.HUD.h.qTitles[1]') + 14 + 4, 'under the quest\'s name');
+  assert.equal(top('NS.HUD.h.qRows[2].text'), top('NS.HUD.h.qChains[3].text') + 14 + 4, 'the objective 4 under the line');
+  assert.deepEqual([x('NS.HUD.h.qChains[2].text'), x('NS.HUD.h.qRows[2].text'), x('NS.HUD.h.qChains[2].mark')], [30, 30, 13], 'with the objectives\' words; the mark centred on the bullets');
+  assert.equal(vm.num('NS.HUD.h.qChains[2].text.width'), 300 - 12 - 30, 'to the right gutter, where the counts end [UC-05]');
+  assert.equal(top('NS.HUD.h.qChains[2].mark'), top('NS.HUD.h.qChains[2].text'));
+  assert.deepEqual(vm.json('{ NS.HUD.h.qChains[1].mark.width, NS.HUD.h.qChains[1].mark.height }'), [12, 12]);
+  // Wider than the list: where it leads, without the step, in two lines at most [UC-03].
+  vm.run('NS.HUD.h.qChains[3].text.GetUnboundedStringWidth = function() return 300 end; NS.HUD.h.layoutKey = nil; NS.HUD.Render()');
+  assert.equal(vm.evaluate('NS.HUD.h.qChains[3].text.text'), 'Leads to |cff0070ddWhirlwind Axe|r or 2 more');
+  assert.equal(vm.num('NS.HUD.h.qChains[3].text.maxLines'), 2);
+  // A client without the quest log's icons, or a reward with no icon: the words alone [UC-06].
+  vm.run('C_Texture.GetAtlasExists = function() return false end; C_Item.GetItemIconByID = function() end; NS.HUD.h.layoutKey = nil; NS.HUD.Render()');
+  assert.deepEqual(shown().map(l => l[1]), [false, false, false]);
+  // Settings' Quest Chains off: no lines, and the list closes up at once; on again, they're back.
+  const before = top('NS.HUD.h.qRows[2].text');
+  vm.run('for _, sw in ipairs(NS.Settings.SWITCHES) do if sw[2] == "Quest Chains" then sw[4](false) end end');
+  assert.equal(shown().length, 0, 'no lines');
+  assert.equal(vm.evaluate('NS.HUD.h.qChains[1].mark.shown'), 'false');
+  assert.equal(top('NS.HUD.h.qRows[2].text'), before - 3 * (14 + 4), 'the three lines above it gone');
+  vm.run('for _, sw in ipairs(NS.Settings.SWITCHES) do if sw[2] == "Quest Chains" then sw[4](true) end end');
+  assert.equal(shown().length, 3);
+  // A ready last step: to a place, nothing (you've been there) [UC-04]; to a reward, its line (handing it in gives it).
+  // One to pick up at this stop says where it leads too [UC-02]; one missing elsewhere, nothing.
+  vm.run(`local n = NS.MapShared.navView; n.rev = 2; n.quests = {
+    { id = 166, title = "The Defias Brotherhood", state = "ready", what = "complete, turn it in", objectives = {} },
+    { id = 396, title = "An Audience with the King", state = "ready", what = "complete, turn it in", objectives = {} },
+    { id = 65, title = "The Defias Brotherhood", state = "missing", what = "pick it up here", pickup = true, objectives = {} },
+    { id = 132, title = "The Defias Brotherhood", state = "missing", what = "not in your quest log", objectives = {} } }; NS.HUD.Render()`);
+  assert.deepEqual(shown().map(l => l[0]), ['Leads to |cff0070ddSeal of Wrynn|r · step 12 of 12', 'Leads to |cffffd100The Deadmines|r · step 1 of 7']);
+  // Rows 4 apart; a row's chain line 4 under it and the next row 8 under the line, so it reads as its own row's [UC-07].
+  assert.equal(top('NS.HUD.h.qRows[2].text'), top('NS.HUD.h.qRows[1].text') + 14 + 4);
+  assert.equal(top('NS.HUD.h.qChains[1].text'), top('NS.HUD.h.qRows[2].text') + 14 + 4);
+  assert.equal(top('NS.HUD.h.qRows[3].text'), top('NS.HUD.h.qChains[1].text') + 14 + 8);
+  assert.equal(top('NS.HUD.h.qRows[4].text'), top('NS.HUD.h.qChains[2].text') + 14 + 8);
+  // A stop with one chained quest left: the other lines hide.
+  vm.run('local n = NS.MapShared.navView; n.quests = { n.quests[3] }; n.rev = 3; NS.HUD.Render()');
+  assert.deepEqual(shown().map(l => l[0]), ['Leads to |cffffd100The Deadmines|r · step 1 of 7']);
+});
+
 // A ghost and a corpse (C_DeathInfo, build 70009), for the corpse tests.
 const CORPSE = `
 UnitIsGhost = function(unit) return unit == "player" and STUB.ghost == true end

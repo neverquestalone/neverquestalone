@@ -2,7 +2,7 @@
 
 <img src="images/icon.png" alt="" width="96" align="right">
 
-**Always know where to go next.** NeverQuestAlone is a free quest companion for World of Warcraft®: Forever. It sits by your quest tracker, plans your quests and redraws your route on the map as you play. It runs on the AI you pick: Claude, ChatGPT, Grok or Gemini with your own API key, another OpenAI-compatible service, or a model on your own computer.
+**Always know where to go next.** NeverQuestAlone is a free, open-source quest companion for World of Warcraft®: Forever. It sits by your quest tracker, plans your quests and redraws your route on the map as you play. It runs on the AI you pick: Claude, ChatGPT, Grok or Gemini with your own API key, another OpenAI-compatible service, or a model on your own computer.
 
 **[Download for Mac](https://github.com/tommygeoco/neverquestalone/releases/latest/download/NeverQuestAlone-mac.dmg)** · **[Download for Windows](https://github.com/tommygeoco/neverquestalone/releases/latest/download/NeverQuestAlone-Setup.exe)** · [All downloads](https://github.com/tommygeoco/neverquestalone/releases/latest)
 
@@ -76,6 +76,8 @@ The app is free, and NeverQuestAlone sets no limits of its own. You pay your AI 
 | **Other: an OpenAI-compatible service** | Its address, a key if it takes one, and a model’s name (OpenRouter, Groq, Together and others) | That service’s prices |
 | **Other: a model on your computer** | Ollama (`http://localhost:11434/v1`) or LM Studio (`http://localhost:1234/v1`) with a model downloaded | Free. What you ask stays on your computer. The model shares your graphics card with the game |
 | **Other: a model on your home network** | Ollama or LM Studio on another computer at home, by its address (like `http://192.168.1.20:11434/v1`) | Free. What you ask goes only to that computer |
+
+**A model that thinks before it answers** (like Qwen3, DeepSeek-R1 or gpt-oss): on Ollama 0.34.3 or later, NeverQuestAlone asks a model that can skip its thinking (like Qwen3 8B) to skip it, and gpt-oss to keep it short, so replies come quickly. For other models (like DeepSeek-R1 or Qwen3 30B), and on other servers, when its thinking fills a reply, NeverQuestAlone asks once more with more room and keeps that room for your next replies. Those replies take longer and, on a paid service, cost more.
 
 On Claude Sonnet 5.5, Claude’s default, 40 replies a day cost about $0.76–1.22, so $5 of credit lasts 4 to 7 days. That’s about 1.9–3.0¢ a reply. The app shows your real figures.
 
@@ -166,7 +168,7 @@ A security problem? Report it privately on the Security tab (Report a vulnerabil
 
 ## Build your own
 
-NeverQuestAlone’s code is open source under the MIT license: the desktop app, the addon, what the AI is told, and the game data and quest logic. This repository holds all of it, and each release’s tag holds the source that release was built from.
+NeverQuestAlone’s code is open source under the MIT license: the desktop app, the addon, what the AI is told, and the game data and quest logic. This repository holds all of it, and from version 1.4.18 on, each release’s tag holds the source that release was built from.
 
 To build it, run its tests or release your own, start at [neverquestalone.com/build](https://neverquestalone.com/build) or [Get started](docs/get-started.md). Forks rename the app, bring their own icons and sign it as themselves: the name NeverQuestAlone and its artwork aren’t part of the MIT license ([what it covers](CREDITS.md#what-the-mit-license-covers)).
 

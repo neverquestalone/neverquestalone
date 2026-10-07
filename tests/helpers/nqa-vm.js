@@ -112,6 +112,9 @@ function Methods.CreateTexture(self, name, layer, template, sublevel)
 	return t
 end
 function Methods.SetAtlas(self, atlas) self.atlas = atlas end
+-- A file replaces an atlas the texture had, as in the game (a pooled mark that was a dungeon's icon, then an item's).
+local StubSetTexture = Methods.SetTexture
+function Methods.SetTexture(self, path, ...) self.atlas = nil; return StubSetTexture(self, path, ...) end
 function Methods.SetTexCoord(self, ...) self.texCoord = { ... } end
 function Methods.SetJustifyH(self, j) self.justifyH = j end
 function Methods.SetWordWrap(self, w) self.wordWrap = w end

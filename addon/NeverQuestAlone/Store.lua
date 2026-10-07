@@ -39,7 +39,7 @@
 local ADDON_NAME, ns = ...
 
 ns.ADDON = ADDON_NAME or "NeverQuestAlone"
-ns.VERSION = "1.4.18"
+ns.VERSION = "1.4.19"
 ns.PROTOCOL = 2
 ns.SLOT_COUNT = 200
 ns.SLOT_PREFIX = "NQA_S"

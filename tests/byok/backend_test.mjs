@@ -9,8 +9,8 @@ import path from 'node:path';
 import {
   startMock, reply, errorReply, makeBackend, canaryKeystore, sendParams, waitFor, sleep, tmpDir, CANARY_KEYS, manifestsAt, flatPrices,
 } from './helpers/byok-env.mjs';
-import { KEY_REFUSED, SLOT_CAPS, actionOf, settingsOf, roomForRetry, LAST_REQUESTS, createLocalBackend } from '../../bridge/byok/backend.mjs';
-import { getManifest } from '../../bridge/byok/providers/index.mjs';
+import { KEY_REFUSED, SLOT_CAPS, actionOf, settingsOf, roomForRetry, splitThink, PACE_SHARE, LAST_REQUESTS, createLocalBackend } from '../../bridge/byok/backend.mjs';
+import { getManifest, customManifest } from '../../bridge/byok/providers/index.mjs';
 import { loadPack } from '../../bridge/byok/runtime/pack.mjs';
 import { readDataBlock } from '../../bridge/byok/runtime/context.mjs';
 import { effectivePrice } from '../../bridge/byok/usage/prices.mjs';
@@ -891,22 +891,288 @@ test('empty reply (OpenAI): reasoning that used the whole ceiling (incomplete, m
   } finally { await b.backend.stop(); await twice.close(); }
 });
 
-test('empty reply (Other, a model with no thinking levels): out of room twice, the line sends the player to another model, never to a Thinking it doesn\'t have', async () => {
-  const chunk = (d, finish = null, extra = {}) => `data: ${JSON.stringify({ id: 'c1', object: 'chat.completion.chunk', model: 'qwen3:8b', choices: [{ index: 0, delta: d, finish_reason: finish }], ...extra })}\n\n`;
-  // Thinking in reasoning_content, then the ceiling: Gemini's own reason as a gateway passes it on.
-  const sse = chunk({ role: 'assistant', reasoning_content: 'Let me think about every quest…' }) + chunk({}, 'MAX_TOKENS', { usage: { prompt_tokens: 6000, completion_tokens: 1200 } }) + 'data: [DONE]\n\n';
-  const mock = await startMock(() => ({ status: 200, headers: { 'content-type': 'text/event-stream' }, body: sse }));
-  const env = await started({ config: { provider: 'custom', model: 'qwen3:8b', custom: { baseUrl: `${mock.url}/v1`, model: 'qwen3:8b' } } });
+// Other's model that thinks by default (qwen3, deepseek-r1, gpt-oss on Ollama or LM Studio): it reasons
+// first, needs `need` tokens of it before its answer, and counts it inside max_tokens. With less room it
+// ends on the ceiling with reasoning only; with more, the answer follows. `how`: where its reasoning goes
+// (reasoning_content: DeepSeek, LM Studio's separate field; reasoning: Ollama, LM Studio for gpt-oss;
+// think: in the text, <think>…</think>, as llama.cpp with --reasoning-format none and older LM Studio send
+// it; usage: hidden, only counted in usage's reasoning_tokens). With reasoning_effort "none" (Ollama's no
+// thinking) it answers at once. `show`: what /api/show answers (Ollama's thinking controls), or a 404 (null).
+// `waitMs`, `writeMs`: real ms before its first chunk and between it and the end (a scaled clock reads them).
+function thinker({ need = 3000, model = 'qwen3:8b', how = 'reasoning_content', answer = 'Head to the Crossroads.\n\nTL;DR: The Crossroads.', show = null, waitMs = 0, writeMs = 0, counted = null, onCall = null } = {}) {
+  const chunk = (d, finish = null, extra = {}) => `data: ${JSON.stringify({ id: 'c1', object: 'chat.completion.chunk', model, choices: [{ index: 0, delta: d, finish_reason: finish }], ...extra })}\n\n`;
+  const thought = 'Let me think about every quest…';
+  return rec => {
+    if (rec.url === '/api/show') return show ? { status: 200, headers: { 'content-type': 'application/json' }, body: JSON.stringify(show) } : { status: 404, headers: { 'content-type': 'application/json' }, body: '{"error":"not found"}' };
+    onCall?.(rec);
+    const room = rec.body?.max_tokens ?? 0;
+    const off = rec.body?.reasoning_effort === 'none';
+    const think = how === 'think' ? chunk({ role: 'assistant', content: `<think>${thought}` }) : how === 'usage' ? chunk({ role: 'assistant' }) : chunk({ role: 'assistant', [how]: thought });
+    const usage = out => ({ usage: { prompt_tokens: 6000, completion_tokens: out, ...(how === 'usage' ? { completion_tokens_details: { reasoning_tokens: Math.min(out, need) } } : {}) } });
+    // Gemini's own reason as a gateway passes it on, MAX_TOKENS, is the ceiling too.
+    const tail = off ? chunk({ content: answer }) + chunk({}, 'stop', usage(60))
+      : room < need ? chunk({}, 'MAX_TOKENS', usage(counted ?? room))
+        : (how === 'think' ? chunk({ content: '</think>\n\n' }) : '') + chunk({ content: answer }) + chunk({}, 'stop', usage(need + 60));
+    const head = off ? '' : think;
+    return { status: 200, headers: { 'content-type': 'text/event-stream' }, script: [[waitMs, head || chunk({ role: 'assistant' })], [writeMs, ': tail\n\n' + tail + 'data: [DONE]\n\n']] };
+  };
+}
+const customCalls = mock => mock.requests.filter(r => r.url === '/v1/chat/completions').map(r => r.body);
+const OTHER = (url, model = 'qwen3:8b') => ({ provider: 'custom', model, custom: { baseUrl: `${url}/v1`, model } });
+// A clock the test moves, and a fetch that moves it as the model would while the backend reads its answer:
+// `wait` ms before the first chunk, `write` ms before the part from thinker's ": tail" comment on (split off
+// if it came with the head). The body is read only as the backend asks for it, so the pace it measures and
+// the time it has left are exact, however busy the machine. timings: {wait, write}, or a function of the
+// chat call's index; a call it gives `hang` never answers.
+function pacedNet(timings = {}) {
+  const clock = { t: Date.parse('2026-10-06T12:00:00Z') };
+  let call = 0;
+  const enc = new TextEncoder();
+  const fetchFn = async (url, init) => {
+    const res = await fetch(url, init);
+    if (!String(url).endsWith('/chat/completions') || !res.body) return res;
+    const { wait = 0, write = 0 } = (typeof timings === 'function' ? timings(call++) : timings) || {};
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    let first = true;
+    let tail = null;
+    const body = new ReadableStream({
+      async pull(ctrl) {
+        if (tail) { clock.t += write; ctrl.enqueue(tail); tail = null; return; }
+        const { value, done } = await reader.read();
+        if (done) { ctrl.close(); return; }
+        if (first) { clock.t += wait; first = false; }
+        const text = dec.decode(value, { stream: true });
+        const i = text.indexOf(': tail');
+        if (i > 0) { ctrl.enqueue(enc.encode(text.slice(0, i))); tail = enc.encode(text.slice(i)); return; }
+        if (i === 0) clock.t += write;
+        ctrl.enqueue(enc.encode(text));
+      },
+      cancel(r) { return reader.cancel(r); },
+    }, { highWaterMark: 0 });
+    return new Response(body, { status: res.status, headers: res.headers });
+  };
+  return { clock, now: () => clock.t, fetch: fetchFn };
+}
+const paced = (perSecond, leftMs) => Math.floor(perSecond * leftMs / 1000 * PACE_SHARE);
+
+test('empty reply (Other, a model that thinks by default on this computer): out of room with reasoning only, it\'s tried once more with High\'s room (free here) and answers; nothing else in the request changes; the next turn starts with that room', async () => {
+  for (const how of ['reasoning_content', 'reasoning', 'usage']) {
+    const mock = await startMock(thinker({ how }));
+    const lines = [];
+    const env = await started({ config: OTHER(mock.url), log: (k, d) => lines.push([k, d]) });
+    try {
+      await env.backend.send(sendParams(CHAT, `e_7${how}`, 'where now?'));
+      const fin = await waitFor(() => env.chats('final')[0], 5000, 'the final');
+      assert.equal(fin.message.content[0].text, 'Head to the Crossroads.\n\nTL;DR: The Crossroads.', how);
+      const calls = customCalls(mock);
+      assert.deepEqual(calls.map(c => c.max_tokens), [1200, 1200 + 8192], `${how}: the reply's 1,200, then High's room more (Minimal's 1,024 never fit a thinking model)`);
+      assert.deepEqual({ ...calls[1], max_tokens: 0 }, { ...calls[0], max_tokens: 0 }, 'the rest as it was');
+      assert.ok(!('reasoning_effort' in calls[0]), 'its server reported no thinking controls (a 404): nothing asked');
+      // Both attempts counted once (a counted reasoning part is inside the output: TM-13), at nothing (a server here).
+      assert.deepEqual([fin.usage.out, fin.usage.micros, fin.usage.exact], [1200 + 3060, 0, true], how);
+      const retry = lines.find(([k]) => k === 'byok-empty-retry')?.[1];
+      assert.deepEqual([retry?.how, retry?.reasoned, retry?.maxTokens, retry?.retryMaxTokens], ['room', true, 1200, 9392]);
+      assert.equal(env.backend.status().lastError, null);
+      // The next turn starts with the room it needed: one call, no thinking-only first try.
+      await env.backend.send(sendParams(CHAT, `e_7${how}2`, 'and then?'));
+      await waitFor(() => env.chats('final').length === 2, 5000, 'the second final');
+      assert.deepEqual(customCalls(mock).map(c => c.max_tokens), [1200, 9392, 9392]);
+      assert.equal(mock.requests.filter(r => r.url === '/api/show').length, 1, 'its server asked once a session');
+    } finally { await env.backend.stop(); await mock.close(); }
+  }
+});
+
+test('Other on Ollama: the model\'s thinking controls from /api/show, once a session: no thinking where it can be turned off (qwen3:8b: one call, the answer), the lowest named level where it can\'t (gpt-oss), nothing for one that always thinks (qwen3:30b) or one its server reports nothing for (deepseek-r1, any model on an older Ollama)', async () => {
+  const cases = [
+    { model: 'qwen3:8b', show: { thinking: { values: [false, true], default: true } }, want: 'none', calls: 1 }, // a template with /think and /no_think
+    { model: 'gpt-oss:20b', show: { thinking: { values: ['low', 'medium', 'high'], default: 'medium' } }, want: 'low', calls: 2 },
+    { model: 'qwen3:30b', show: { thinking: { values: [true], default: true } }, want: undefined, calls: 2 }, // a template that always opens a thinking block
+    { model: 'deepseek-r1:8b', show: { license: 'MIT', template: '{{ .Prompt }}' }, want: undefined, calls: 2 }, // no thinking field for its template on any Ollama, as for any model on one before 0.34.3
+  ];
+  for (const c of cases) {
+    const mock = await startMock(thinker({ model: c.model, show: c.show }));
+    const lines = [];
+    const env = await started({ config: OTHER(mock.url, c.model), log: (k, d) => lines.push([k, d]) });
+    try {
+      await env.backend.send(sendParams(CHAT, `e_8${c.calls}${c.want}`, 'where now?'));
+      const fin = await waitFor(() => env.chats('final')[0], 5000, `${c.model}: the final`);
+      assert.equal(fin.message.content[0].text, 'Head to the Crossroads.\n\nTL;DR: The Crossroads.', c.model);
+      const calls = customCalls(mock);
+      assert.deepEqual([calls.length, calls[0].reasoning_effort], [c.calls, c.want], c.model);
+      const show = mock.requests.find(r => r.url === '/api/show');
+      assert.deepEqual([show.method, show.body, show.headers.authorization], ['POST', { model: c.model }, undefined], 'the model asked about, no key sent');
+      assert.deepEqual(lines.find(([k]) => k === 'byok-thinking')?.[1].options, c.want ? { reasoning_effort: c.want } : null);
+    } finally { await env.backend.stop(); await mock.close(); }
+  }
+});
+
+test('empty reply (Other): a model that never answers, even with High\'s room, ends with the line that sends the player to another model, never to a Thinking it doesn\'t have; no third call', async () => {
+  const mock = await startMock(thinker({ need: 1e9 }));
+  const env = await started({ config: OTHER(mock.url) });
   try {
-    await env.backend.send(sendParams(CHAT, 'e_7', 'where now?'));
+    await env.backend.send(sendParams(CHAT, 'e_7n', 'where now?'));
     const err = await waitFor(() => env.chats('error')[0], 5000, 'the error');
     assert.deepEqual([err.errorKind, err.errorMessage, err.action],
       ['empty_reply', "NeverQuestAlone couldn't finish a reply. Ask again, or pick another model in the NeverQuestAlone app.", 'retry']);
-    const calls = mock.requests.filter(r => r.url === '/v1/chat/completions').map(r => r.body);
-    assert.equal(calls.length, 2);
-    assert.deepEqual([calls[0].max_tokens, calls[1].max_tokens], [1200, 1200 + 1024], 'nothing lower to go to: more room, THINK_ROOM\'s first step');
-    assert.deepEqual({ ...calls[1], max_tokens: 0 }, { ...calls[0], max_tokens: 0 }, 'the rest as it was');
+    assert.deepEqual(customCalls(mock).map(c => c.max_tokens), [1200, 9392]);
     assert.equal(env.backend.status().lastError.code, 'length', 'MAX_TOKENS is the ceiling');
+  } finally { await env.backend.stop(); await mock.close(); }
+});
+
+test('empty reply (Other): the more-room try fits the run\'s time at the pace the model wrote from its first token; one that can\'t write 1,024 more in the time left isn\'t tried: its line now, not the same line or a timeout later', async () => {
+  const run = async (key, timing, mockOpts = {}) => {
+    const net = pacedNet(timing);
+    const mock = await startMock(thinker(mockOpts));
+    const lines = [];
+    const env = await started({ config: OTHER(mock.url), now: net.now, fetch: net.fetch, runMs: 180000, log: (k, d) => lines.push([k, d]) });
+    try {
+      await env.backend.send(sendParams(CHAT, key, 'where now?'));
+      await waitFor(() => env.chats('final')[0] || env.chats('error')[0], 5000, 'the end');
+      return { calls: customCalls(mock).map(c => c.max_tokens), retry: lines.find(([k]) => k === 'byok-empty-retry')?.[1] };
+    } finally { await env.backend.stop(); await mock.close(); }
+  };
+  // 1,200 tokens in 20 s (60 a second): 160 s left, 80% of it at that pace: 7,680, under High's 9,392.
+  assert.deepEqual((await run('e_7f', { write: 20000 })).calls, [1200, paced(60, 160000)]);
+  // 20 a second (60 s): 120 s left fits 1,920, not 1,024 more than it had: no more try.
+  const slow = await run('e_7s', { write: 60000 });
+  assert.deepEqual([slow.calls, slow.retry?.skipped, slow.retry?.leftMs, slow.retry?.reasoned], [[1200], 'no_room', 120000, true]);
+  // A cold model: 50 s before its first token, then 120 a second; tried, though 1,200 in 60 s from the send
+  // is 20 a second. The time left takes that wait off again: 180 - 60 - 50 = 70 s.
+  assert.deepEqual((await run('e_7c', { wait: 50000, write: 10000 })).calls, [1200, paced(120, 70000)]);
+  // What its usage says it wrote is its pace: 600 counted in 20 s is 30 a second, not 60.
+  assert.deepEqual((await run('e_7o', { write: 20000 }, { counted: 600 })).calls, [1200, paced(30, 160000)]);
+});
+
+test('Other: a held turn\'s run limit starts again when it goes, so its more-room try has the time it\'s owed', async () => {
+  // A cloud model through a server here (not local, so a refused connection holds the turn).
+  const net = pacedNet({ write: 20000 });
+  let down = true;
+  const fetchFn = async (url, init) => {
+    if (down && String(url).includes('/chat/completions')) throw Object.assign(new TypeError('fetch failed'), { cause: Object.assign(new Error('connect ECONNREFUSED'), { code: 'ECONNREFUSED' }) });
+    return net.fetch(url, init);
+  };
+  const mock = await startMock(thinker({ model: 'gpt-oss:120b-cloud' }));
+  const env = await started({ config: OTHER(mock.url, 'gpt-oss:120b-cloud'), now: net.now, runMs: 180000, fetch: fetchFn, holdProbeMs: { first: 30, max: 60 } });
+  try {
+    await env.backend.send(sendParams(CHAT, 'e_7h', 'where now?'));
+    await waitFor(() => env.backend.status().held?.length === 1, 3000, 'held');
+    net.clock.t += 170000; // held 170 s: most of a run limit, had it kept running
+    down = false;
+    await waitFor(() => env.chats('final')[0] || env.chats('error')[0], 5000, 'the end');
+    assert.deepEqual(customCalls(mock).map(c => c.max_tokens), [1200, paced(60, 160000)], 'a fresh 180 s from the send');
+  } finally { await env.backend.stop(); await mock.close(); }
+});
+
+test('Other: the room a thinking model learned is held to what its last answer\'s pace writes in a run, and a run that times out forgets it', async () => {
+  // Turn 1: 1,200 in 10 s (120 a second), then the answer's 3,060 in 100 s (30.6 a second). Turn 2 starts
+  // with the room it learned, held to 30.6 a second for 80% of 180 s. Turn 3 hangs past its run limit;
+  // turn 4 starts from the reply's own 1,200 again.
+  const net = pacedNet(i => [{ write: 10000 }, { write: 100000 }, { write: 1000 }, {}, { write: 1000 }][i] ?? {});
+  const think = thinker();
+  const asks = (rec, words) => (rec.body?.messages ?? []).some(m => String(m.content).includes(words));
+  // Turn 3 ("still there?") never answers; under load its 100 ms may even end before it's sent.
+  const mock = await startMock(rec => (rec.url === '/v1/chat/completions' && asks(rec, 'still there?') ? { status: 200, headers: { 'content-type': 'text/event-stream' }, hangBeforeHeaders: true } : think(rec)));
+  let short = false;
+  const lines = [];
+  const env = await started({ config: OTHER(mock.url), now: net.now, fetch: net.fetch, runMs: 180000, deadline: ms => AbortSignal.timeout(short ? 100 : ms), log: (k, d) => lines.push([k, d]) });
+  try {
+    await env.backend.send(sendParams(CHAT, 'e_9a', 'where now?'));
+    await waitFor(() => env.chats('final').length === 1, 5000, 'turn 1');
+    await env.backend.send(sendParams(CHAT, 'e_9b', 'and then?'));
+    await waitFor(() => env.chats('final').length === 2, 5000, 'turn 2');
+    assert.deepEqual(customCalls(mock).map(c => c.max_tokens), [1200, 9392, paced(30.6, 180000)]);
+    short = true;
+    await env.backend.send(sendParams(CHAT, 'e_9c', 'still there?'));
+    await waitFor(() => env.chats('error').length === 1, 5000, 'turn 3 times out');
+    assert.equal(env.chats('error')[0].errorKind, 'timeout');
+    short = false;
+    await env.backend.send(sendParams(CHAT, 'e_9d', 'hello?'));
+    const turn4 = await waitFor(() => mock.requests.find(r => r.url === '/v1/chat/completions' && asks(r, 'hello?')), 5000, 'turn 4');
+    assert.equal(turn4.body.max_tokens, 1200, 'the room forgotten');
+    assert.ok(lines.some(([k, d]) => k === 'byok-thinking-room' && d.reason === 'timeout'));
+  } finally { await env.backend.stop(); await mock.close(); }
+});
+
+test('Other at home: a server on the home network serving its own model is free, as the README says: $0 booked, and a daily limit never stops it', async () => {
+  const mock = await startMock(thinker({ need: 0 }));
+  const home = 'http://192.168.1.20:11434';
+  const fetchFn = (url, init) => fetch(String(url).replace(home, mock.url), init);
+  const env = await started({ config: { provider: 'custom', model: 'qwen3:8b', custom: { baseUrl: `${home}/v1`, model: 'qwen3:8b' } }, fetch: fetchFn });
+  try {
+    await env.backend.setConfig({ caps: { dailyUsd: 0.000001 } });
+    for (const key of ['e_10a', 'e_10b']) {
+      await env.backend.send(sendParams(CHAT, key, 'where now?'));
+    }
+    await waitFor(() => env.chats('final').length === 2, 5000, 'two replies under a tiny limit');
+    assert.deepEqual(env.chats('final').map(f => [f.usage.micros, f.usage.exact]), [[0, true], [0, true]]);
+    assert.equal(env.backend.caps.details().spentMicros, 0);
+    // Spent past the limit at another AI earlier today: the free server at home isn't held at the limit.
+    env.backend.caps.book({ provider: 'anthropic', micros: 5000, exact: true });
+    assert.deepEqual([env.backend.status().rt.state, env.backend.status().usage?.needs ?? null], ['ready', null]);
+  } finally { await env.backend.stop(); await mock.close(); }
+});
+
+test('Other: a failed attempt keeps its thinking text, so it counts as begun (at least its estimate), never as nothing', async () => {
+  const chunk = d => `data: ${JSON.stringify({ id: 'c1', object: 'chat.completion.chunk', model: 'm-cloud', choices: [{ index: 0, delta: d, finish_reason: null }] })}\n\n`;
+  const err = `data: ${JSON.stringify({ error: { message: 'bad request', type: 'invalid_request_error', code: 'bad_request' } })}\n\n`;
+  const mock = await startMock(rec => (rec.url === '/api/show' ? { status: 404, headers: {}, body: '' } : { status: 200, headers: { 'content-type': 'text/event-stream' }, body: chunk({ role: 'assistant', content: '<think>Let me plan' }) + err }));
+  const env = await started({ config: OTHER(mock.url, 'm-cloud') });
+  try {
+    const p = sendParams(CHAT, 'e_7x', 'where now?');
+    await env.backend.send(p);
+    await waitFor(() => env.chats('error')[0], 5000, 'the error');
+    const est = env.backend.ledger.get(p.idem).extra.estMicros;
+    assert.ok(est > 0 && env.backend.caps.details().spentMicros >= est, 'counted at its estimate (failedMidReply), not 0');
+  } finally { await env.backend.stop(); await mock.close(); }
+});
+
+test('Other: thinking sent as the reply\'s text (<think>…</think>) is never the reply; one that never closed is reasoning only and gets the room to answer; the AI companies\' replies are left as they are', async () => {
+  const mock = await startMock(thinker({ how: 'think', need: 3000 }));
+  const env = await started({ config: OTHER(mock.url, 'deepseek-r1-distill-qwen-7b') });
+  try {
+    await env.backend.send(sendParams(CHAT, 'e_7t', 'where now?'));
+    const fin = await waitFor(() => env.chats('final')[0], 5000, 'the final');
+    assert.equal(fin.message.content[0].text, 'Head to the Crossroads.\n\nTL;DR: The Crossroads.', 'the answer alone');
+    assert.deepEqual(customCalls(mock).map(c => c.max_tokens), [1200, 9392], 'the first, cut inside its <think>, had no reply');
+  } finally { await env.backend.stop(); await mock.close(); }
+  // Claude's reply quoting a lone </think> stays whole.
+  const claude = await startMock(() => reply('Type </think> to end it.\n\nTL;DR: </think>.'));
+  const a = await started({ url: claude.url, keystore: await canaryKeystore() });
+  try {
+    await a.backend.send(sendParams(CHAT, 'e_7u', 'how do I end a think tag?'));
+    const fin = await waitFor(() => a.chats('final')[0], 5000, 'the final');
+    assert.equal(fin.message.content[0].text, 'Type </think> to end it.\n\nTL;DR: </think>.');
+  } finally { await a.backend.stop(); await claude.close(); }
+  assert.deepEqual(splitThink('<think>plan</think>\n\nGo north.'), { text: 'Go north.' });
+  assert.deepEqual(splitThink('  <THINK>plan, cut off'), { text: '' }, 'never closed: no reply');
+  assert.deepEqual(splitThink('plan, the tag opened by the template</think>Go north.'), { text: 'Go north.' });
+  assert.equal(splitThink('Go north. Then <think>…</think>?'), null, 'only a leading block');
+  assert.equal(splitThink('Go north.'), null);
+});
+
+test('empty reply (Other, a paid service): the bigger try is checked against the player\'s daily limit first, at the unknown model\'s price; refused, nothing more is sent, and the first attempt is booked at what it cost', async () => {
+  // A cloud model through a server on this computer (Ollama's -cloud): priced as any service's.
+  let release;
+  const gate = new Promise(r => { release = r; });
+  const think = thinker({ model: 'gpt-oss:120b-cloud' });
+  const mock = await startMock(async rec => { if (rec.url !== '/api/show') await gate; return think(rec); });
+  const lines = [];
+  const env = await started({ config: OTHER(mock.url, 'gpt-oss:120b-cloud'), log: (k, d) => lines.push([k, d]) });
+  try {
+    const p = sendParams(CHAT, 'e_7c', 'where now?');
+    await env.backend.send(p);
+    await waitFor(() => customCalls(mock).length === 1, 3000, 'the first call');
+    const est = env.backend.ledger.get(p.idem).extra.estMicros;
+    assert.ok(est > 0, 'not free: the service prices it');
+    await env.backend.setConfig({ caps: { dailyUsd: (est + 100) / 1e6 } });
+    release();
+    const err = await waitFor(() => env.chats('error')[0], 5000, 'the error');
+    assert.equal(err.errorKind, 'empty_reply', 'the empty reply\'s line, not the limit\'s');
+    await sleep(50);
+    assert.equal(customCalls(mock).length, 1, 'no second call');
+    assert.equal(lines.find(([k]) => k === 'byok-empty-retry')?.[1].skipped, 'cap_spend');
+    assert.ok(env.backend.caps.details().spentMicros > 0, 'the first attempt, booked');
   } finally { await env.backend.stop(); await mock.close(); }
 });
 
@@ -949,6 +1215,15 @@ test('empty reply: roomForRetry never gives the same request: the lowest level, 
   assert.deepEqual(roomForRetry(req('off', 1200), a, 'claude-sonnet-5-5'), { how: 'room', req: req('off', 1200 + 2048) }, 'at Off: Low\'s room more');
   assert.deepEqual(roomForRetry(req(null, 1200 + 4096), x, 'grok-4.20-0309-reasoning'), { how: 'room', req: req(null, 1200 + 4096 + 8192) }, 'no levels, 4,096 of its own: the next step up, 8,192');
   assert.deepEqual(roomForRetry(req(null, 1200), x, 'grok-4.20-0309-non-reasoning'), { how: 'room', req: req(null, 1200 + 1024) });
+  // A model with no levels seen thinking (Other's qwen3 on Ollama): High's room at least, within the time the
+  // run has left at the failed attempt's pace; not seen thinking, as before; a model with levels, its next.
+  const other = customManifest(getManifest('custom'), { baseUrl: 'http://localhost:8080/v1', model: 'qwen3:8b' });
+  assert.deepEqual(roomForRetry(req(null, 1200), other, 'qwen3:8b', { reasoned: true }), { how: 'room', req: req(null, 1200 + 8192) });
+  assert.deepEqual(roomForRetry(req(null, 1200), other, 'qwen3:8b'), { how: 'room', req: req(null, 1200 + 1024) });
+  assert.deepEqual(roomForRetry(req(null, 1200 + 4096), x, 'grok-4.20-0309-reasoning', { reasoned: true }), { how: 'room', req: req(null, 1200 + 4096 + 8192) }, 'its next step is High\'s anyway');
+  assert.deepEqual(roomForRetry(req(null, 1200), other, 'qwen3:8b', { reasoned: true, perSecond: 50, leftMs: 100000 }), { how: 'room', req: req(null, Math.floor(50 * 100 * PACE_SHARE)) }, '4,000 tokens in the time left');
+  assert.equal(roomForRetry(req(null, 1200), other, 'qwen3:8b', { reasoned: true, perSecond: 10, leftMs: 60000 }), null, '480 in the time left: less than it had');
+  assert.deepEqual(roomForRetry(req('low', 3248), a, 'claude-opus-5-5', { reasoned: true }), { how: 'room', req: req('low', 3248 + 4096) }, 'levels: the next one\'s, reasoned or not');
   // Held to the model's own output ceiling; at it already, no retry (never the same request).
   const tight = { ...a, models: { ...a.models, list: a.models.list.map(e => (e.id === 'claude-opus-5-5' ? { ...e, outputTokens: 5000 } : e)) } };
   assert.deepEqual(roomForRetry(req('low', 3248), tight, 'claude-opus-5-5'), { how: 'room', req: req('low', 5000) });

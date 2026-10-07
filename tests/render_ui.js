@@ -84,6 +84,31 @@ const BARRENS_ROUTE = `, map = { epoch = "e1", version = 1, layers = { { name = 
   { 1432, 60, 45, "5. Northwatch Hold", "kill", "", {} },
   { 1432, 70, 60, "6. Ratchet", "turnin", "", {} } } } } }`;
 
+// Chains.lua's quests in the log of a human warrior (UnitRace's and UnitClass's ids, for the records by
+// class), with the reward icons the game would give (C_Item.GetItemIconByID), and a route through them.
+const CHAIN_LOG = `
+function UnitRace() return "Human", "Human", 1 end
+function UnitClass() return "Warrior", "WARRIOR", 1 end
+C_Item.GetItemIconByID = function(id) return "Interface\\\\Icons\\\\INV_Item_" .. id end
+for _, q in ipairs({
+	{ id = 65, title = "The Defias Brotherhood", complete = false, objectives = {} },
+	{ id = 1718, title = "The Islander", complete = false, objectives = { { text = "Trophy of the Islander: 0/1", finished = false } } },
+	{ id = 6822, title = "The Molten Core", complete = true, objectives = { { text = "Fire Lord slain: 1/1", finished = true } } },
+	{ id = 7785, title = "Examine the Vessel", complete = false, objectives = { { text = "Vessel of Rebirth: 0/1", finished = false } } },
+	{ id = 886, title = "The Barrens Oases", complete = false, objectives = {} },
+	{ id = 8945, title = "Dead Man's Plea", complete = false, objectives = { { text = "Find Ysida Harmon", finished = false } } },
+	{ id = 166, title = "The Defias Brotherhood", complete = true, objectives = { { text = "Edwin VanCleef slain: 1/1", finished = true } } },
+	{ id = 396, title = "An Audience with the King", complete = true, objectives = {} },
+}) do table.insert(STUB.log, q) end
+local titles = { [132] = "The Defias Brotherhood" } -- one to pick up, not in the log
+local logTitle = C_QuestLog.GetTitleForQuestID
+C_QuestLog.GetTitleForQuestID = function(id) return titles[id] or (logTitle and logTitle(id)) end
+`;
+const CHAIN_ROUTE = `, map = { epoch = "e1", version = 1, layers = { { name = "chains", title = "Chains loop", ordered = true, loop = false, points = {
+  { 1432, 30, 40, "1. Sentinel Hill", "turnin", "", { 6822, 65, 1718, 871 } },
+  { 1432, 40, 50, "2. The Crossroads", "kill", "", { 7785, 886, 8945 } },
+  { 1432, 50, 60, "3. Stormwind Keep", "quest", "", { 166, 396, 132 } } } } } }`;
+
 function hud({ db = 'NQADB = { hudIntro = true, qolAsked = true, firstReply = true }', route = true, setup = null, extra = '' } = {}) {
   const vm = confirmHello(newVM({ db, extra: METRICS + MAP_STUB + BARRENS + extra }).login());
   if (route) {
@@ -664,6 +689,18 @@ async function main() {
   const barNews = vm => { vm.run('NQADB.settings.hudMin = true'); apply(vm, slotLua({ records: [`{ seq = 1, t = "reply", chat = "${id(vm)}", mid = "m1", agent = "main", text = "The Fold is north.", summary = "", more = 0 }`] })); };
   panels.push(panel(hud({ setup: vm => { barNews(vm); vm.run('STUB.FireEvent("PLAYER_LEVEL_UP", 24)'); } }), 'Minimized, a ding over unread news: its Okay ends the ding first (E-1)'));
   panels.push(panel(hud({ setup: vm => { barNews(vm); vm.advance(200); } }), 'Minimized, the app silent over unread news: no Okay (E-1)'));
+  // Quest chains (Chains.lua) in the HUD's list: a human warrior at a stop whose quests lead somewhere.
+  const chains = (setup = null) => hud({ route: false, extra: CHAIN_LOG, setup: vm => {
+    apply(vm, slotLua({ extra: CHAIN_ROUTE }));
+    vm.run('NQAMap.Command("nav chains 1"); NQAMap.UpdateNavigator(); NS.HUD.Render()');
+    if (setup) setup(vm);
+  } });
+  panels.push(panel(chains(), 'Chained quests at a stop: under a quest\'s name, its payoff\'s icon and where it leads (a dungeon, a reward "or 2 more", a raid under a ready quest\'s row); nothing under a quest that leads nowhere'));
+  panels.push(panel(chains(vm => vm.run('NQAMap.Command("nav chains 2"); NQAMap.UpdateNavigator(); NS.HUD.Render()')),
+    'The longest: a legendary reward in two lines, without its step; a breadcrumb with no step, and a step with no count'));
+  panels.push(panel(chains(vm => vm.run('NQAMap.Command("nav chains 3"); NQAMap.UpdateNavigator(); NS.HUD.Render()')),
+    'Chains, ready and to pick up: a ready last step to a dungeon says nothing (you\'ve been), a reward\'s keeps its line, one to pick up here says where it leads'));
+  panels.push(panel(chains(vm => vm.run('NQADB.settings.chains = false; NS.HUD.Render()')), 'Settings\' Quest Chains off: no chain lines, the list as before'));
   // QOL=1: the Quality of Life step (QoL.lua), in a session after the first
   // reply's, on a client with the game's Auto Loot setting and loot key.
   if (process.env.QOL) {
@@ -729,7 +766,7 @@ async function main() {
     // A row's tooltip, as the list shows it (Settings.InitTooltip: its name, then its words, wrapped).
     const tipOf = (rows, name) => ({ row: name, title: name, lines: [{ text: rows.find(r => r.name === name).tip }] });
     const quests = section(page, 'Quests');
-    panels.push(settingsPanel(quests, 'Quests: Quest Chains, on by default (Chains.lua\'s line on the quest pages); its tooltip', { tip: tipOf(quests, 'Quest Chains') }));
+    panels.push(settingsPanel(quests, 'Quests: Quest Chains, on by default (Chains.lua\'s line on the quest pages and the HUD); its tooltip', { tip: tipOf(quests, 'Quest Chains') }));
     const qol = section(page, 'Quality of Life');
     panels.push(settingsPanel(qol, 'Quality of Life, Auto Turn In Quests off: Quest Rewards\' three rows under it, indented and grayed at 12 pt (no parent link, QL-36), Your Pick checked; its tooltip says what the rule is for first (C-122)',
       { tip: tipOf(qol, 'Quest Rewards: Your Pick') }));

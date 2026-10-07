@@ -8,7 +8,7 @@
 // Studio's: two services players connect through Other.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { checkCustomUrl, customManifest, withCustom, manifestFor, getManifest, loadManifests, validateManifest, pickProviderForKey, CUSTOM_ID } from '../../bridge/byok/providers/index.mjs';
+import { checkCustomUrl, customManifest, withCustom, manifestFor, getManifest, loadManifests, validateManifest, pickProviderForKey, thinkingOptions, CUSTOM_ID } from '../../bridge/byok/providers/index.mjs';
 import { serveOne, startMock, fixture, mockCustom, collect, textOf, last, req } from './helpers/mock-provider.mjs';
 
 const KEY = `sk-or-v1-CANARY${'x'.repeat(64)}`;
@@ -164,7 +164,7 @@ test('DeepSeek on Other (a player, 2026-10-05): its own host gets thinking off, 
     assert.deepEqual(m.defaultRequestOptions, { thinking: { type: 'disabled' } }, baseUrl);
     assert.deepEqual(validateManifest(m), [], baseUrl);
   }
-  for (const [baseUrl, model] of [['https://openrouter.ai/api/v1', 'deepseek/deepseek-v4-pro'], ['https://api.together.xyz/v1', 'deepseek-ai/DeepSeek-V4-Pro'], ['http://localhost:11434/v1', 'deepseek-r1:8b'], ['https://constructor/v1', 'm']]) {
+  for (const [baseUrl, model] of [['https://openrouter.ai/api/v1', 'deepseek/deepseek-v4-pro'], ['https://api.together.xyz/v1', 'deepseek-ai/DeepSeek-V4-Pro'], ['http://localhost:1234/v1', 'deepseek-r1-distill-qwen-7b'], ['https://constructor/v1', 'm']]) {
     assert.deepEqual(customManifest(t, { baseUrl, model }).defaultRequestOptions, {}, `${baseUrl}: DeepSeek's switch goes to DeepSeek's own host only`);
   }
   const { sent, events } = await run('openrouter', 'success.sse', req('deepseek-v4-pro', { maxTokens: 1200, effort: null }), { baseUrl: 'https://api.deepseek.com', key: KEY });
@@ -174,6 +174,68 @@ test('DeepSeek on Other (a player, 2026-10-05): its own host gets thinking off, 
   assert.deepEqual(sent.body.stream_options, { include_usage: true });
   for (const k of ['reasoning', 'reasoning_effort', 'temperature', 'top_p']) assert.ok(!(k in sent.body), k);
   assert.equal(textOf(events), 'Free model says hi.');
+});
+
+test('an Other server\'s thinking controls (Ollama\'s /api/show): "none" where a model can turn thinking off, its lowest named level where it can\'t, nothing for one that always thinks, has none, or a server that reports none', () => {
+  const opt = values => thinkingOptions({ thinking: { values, default: values[0] } });
+  assert.deepEqual(opt([false, true]), { reasoning_effort: 'none' }, 'qwen3:8b (a template with /think and /no_think)');
+  assert.deepEqual(opt(['low', 'medium', 'high']), { reasoning_effort: 'low' }, 'gpt-oss: its reasoning can\'t be turned off');
+  assert.deepEqual(opt(['high', 'medium', 'max']), { reasoning_effort: 'medium' }, 'the lowest by name, not by order');
+  assert.deepEqual(opt(['think-lite']), { reasoning_effort: 'think-lite' }, 'a model\'s own name, as reported');
+  assert.equal(opt([true]), null, 'a template that always opens a thinking block (qwen3:30b): "none" would only move its thinking into the text');
+  assert.equal(opt([false]), null, 'no thinking at all: nothing to ask');
+  for (const show of [null, {}, { thinking: null }, { thinking: { values: 'false' } }, { thinking: { values: [{}, 3] } }, { license: 'MIT' }]) assert.equal(thinkingOptions(show), null, JSON.stringify(show));
+});
+
+test('provider.thinking: POST /api/show with the model on a server here or at home, no key sent; a 404 (LM Studio, llama.cpp) is an answer, null; a failure to read is undefined (asked again later); never a service off this computer', async () => {
+  const show = { thinking: { values: [false, true], default: true }, license: 'x'.repeat(200000) };
+  const mock = await startMock(rec => (rec.url === '/api/show' && rec.body?.model === 'qwen3:8b' ? { status: 200, headers: { 'content-type': 'application/json' }, body: JSON.stringify(show) } : { status: 404, headers: {}, body: '' }));
+  try {
+    const { provider } = mockCustom(mock.url, { model: 'qwen3:8b', key: 'sk-local-CANARY' });
+    assert.deepEqual(await provider.thinking({ model: 'qwen3:8b' }), { reasoning_effort: 'none' }, 'past a long license');
+    const sent = mock.requests[0];
+    assert.deepEqual([sent.method, sent.url, sent.body, sent.headers.authorization], ['POST', '/api/show', { model: 'qwen3:8b' }, undefined]);
+    assert.equal(await provider.thinking({ model: 'not-pulled' }), null);
+    const home = mockCustom(mock.url, { baseUrl: 'http://192.168.1.20:11434/v1', model: 'qwen3:8b' }).provider;
+    assert.deepEqual(await home.thinking({ model: 'qwen3:8b' }), { reasoning_effort: 'none' }, 'a server at home too');
+  } finally { await mock.close(); }
+  const busy = await serveOne({ status: 503, headers: {}, body: '' });
+  try { assert.equal(await mockCustom(busy.url, { model: 'm' }).provider.thinking({ model: 'm' }), undefined); } finally { await busy.close(); }
+  const gone = await serveOne({ status: 200, headers: {}, body: '' });
+  const url = gone.url;
+  await gone.close();
+  assert.equal(await mockCustom(url, { model: 'm' }).provider.thinking({ model: 'm' }), undefined, 'not reached: asked again on the next turn');
+  const remote = await serveOne({ status: 200, headers: { 'content-type': 'application/json' }, body: JSON.stringify(show) });
+  try {
+    assert.equal(await mockCustom(remote.url, { baseUrl: REMOTE, model: 'm', key: KEY }).provider.thinking({ model: 'm' }), null);
+    assert.equal(remote.requests.length, 0, 'a service off this computer is never asked');
+  } finally { await remote.close(); }
+});
+
+test('a server at home serving its own model is free (as the README says), with cloud privacy; a cloud model through it is priced as a service', async () => {
+  const t = getManifest(CUSTOM_ID);
+  const home = customManifest(t, { baseUrl: 'http://192.168.1.20:11434/v1', model: 'qwen3:8b' });
+  assert.deepEqual([home.local, home.priceSource, home.privacy.class], [false, 'free', 'cloud']);
+  assert.deepEqual(validateManifest(home), []);
+  const cloud = customManifest(t, { baseUrl: 'http://192.168.1.20:11434/v1', model: 'gpt-oss:120b-cloud' });
+  assert.equal(cloud.priceSource, 'response');
+  // Its usage costs nothing, exactly (the turn's and the key test's cost both read it).
+  const { events } = await run('lmstudio', 'success.sse', req('qwen3:8b'), { baseUrl: 'http://192.168.1.20:1234/v1' });
+  assert.deepEqual([events.find(e => e.type === 'usage').usage.costUsd, events.find(e => e.type === 'usage').usage.exact], [0, true]);
+});
+
+test('reasoning in the stream, in any of the fields services use (reasoning_content, Ollama\'s and LM Studio\'s reasoning, OpenRouter\'s reasoning_details), is said once as {type: \'reasoning\'}; a reply with none says nothing', async () => {
+  const chunk = (delta, finish = null) => `data: ${JSON.stringify({ id: 'r1', object: 'chat.completion.chunk', model: 'm', choices: [{ index: 0, delta, finish_reason: finish }] })}\n\n`;
+  for (const field of ['reasoning_content', 'reasoning', 'reasoning_details']) {
+    const value = field === 'reasoning_details' ? [{ type: 'reasoning.text', text: 'hm' }] : 'hm';
+    const body = chunk({ role: 'assistant', [field]: value }) + chunk({ [field]: value }) + chunk({ content: 'Go.' }) + chunk({}, 'stop') + 'data: [DONE]\n\n';
+    const { events } = await run('lmstudio', 'success.sse', req('m'), { spec: { body } });
+    assert.equal(events.filter(e => e.type === 'reasoning').length, 1, field);
+    assert.equal(textOf(events), 'Go.', field);
+    assert.ok(!events.some(e => e.type === 'progress'), 'the timers\' marks stay inside');
+  }
+  const { events } = await run('lmstudio', 'success.sse', req('m'));
+  assert.equal(events.filter(e => e.type === 'reasoning').length, 0);
 });
 
 test('DeepSeek\'s insufficient_system_resource stop is the service being busy (waited out and tried again), never a whole reply or "no reply"', async () => {

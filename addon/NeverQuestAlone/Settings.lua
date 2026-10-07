@@ -156,10 +156,11 @@ SWITCHES[#SWITCHES + 1] = { "Replies", "Reply Cost", function() return S().reply
 	"Shows what each reply cost under it (\"0.4¢\"), as NeverQuestAlone reports it; /nqa cost on|off does the same.", false }
 SWITCHES[#SWITCHES + 1] = { "Replies", "Message Times", function() return S().times ~= false end, function(v) S().times = v and true or false; ns.UI.LookChanged() end,
 	"Shows the time on each message in the window.", true } -- [UX-W05]
--- Chains.lua's line on the game's quest pages. The facts still go with the game data.
+-- Chains.lua's line on the game's quest pages and under a quest's name on the HUD. The facts still go
+-- with the game data.
 SWITCHES[#SWITCHES + 1] = { "Quests", "Quest Chains", function() return S().chains ~= false end,
-	function(v) S().chains = v and true or false; if ns.Chains then ns.Chains.Refresh() end end,
-	"Shows where a quest's chain leads, in a line under its title when a quest giver offers it and in your quest log: \"Leads to The Deadmines · step 1 of 7\". Only chains to a dungeon, a raid or a rare or better reward get one.", true }
+	function(v) S().chains = v and true or false; if ns.Chains then ns.Chains.Refresh() end; if ns.HUD then ns.HUD.Render() end end,
+	"Shows where a quest's chain leads, in a line under its title when a quest giver offers it, in your quest log and on the HUD: \"Leads to The Deadmines · step 1 of 7\". Only chains to a dungeon, a raid or a rare or better reward get one.", true }
 CHOICES[#CHOICES + 1] = { "Replies", "Name on Your Messages", "youName", function() -- [UX-W05] a label, not a clause
 		local n = ns.Readable(ns.Try(UnitName, "player")) -- "You", or your character's name (read when shown; never a secret, ns.Readable)
 		n = (type(n) == "string" and n ~= "") and ns.Escape(n) or "Your Character's Name"

@@ -254,7 +254,8 @@ end
 -- tracker's check in place of the dash); a
 -- turned-in, ready or missing quest is one line, "{title} · turned in". Also
 -- the same as data, for the HUD to draw in its own styles:
--- { title, state, what (a done/ready/missing line's words), objectives = { { text, finished } } }.
+-- { title, state, what (a done/ready/missing line's words), pickup (missing at a stop to
+-- pick it up), objectives = { { text, finished } } }.
 -- A quest's title as the game's quest log and tracker show it (maintainer: its
 -- colour for its level against yours): SetQuestTitleLevelAndDifficultyColor
 -- (DifficultyUtil.lua, loaded for camelot) colours it (grey, green, yellow,
@@ -281,6 +282,7 @@ local function QuestLines(kind, ids)
 			q.what = "complete, turn it in"
 		elseif s == "missing" then
 			q.what = kind == "quest" and "pick it up here" or "not in your quest log"
+			q.pickup = kind == "quest" or nil -- the HUD says where its chain leads (HUD.lua ChainLine)
 		end
 		if q.what then
 			local line = ns.Fill("{title} · {what}", { title = title, what = q.what })

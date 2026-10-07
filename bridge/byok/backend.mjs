@@ -245,8 +245,9 @@ function wait(ms, signal) {
 // reply's usage.model. hooks: onRequest (the request as sent, the "Last request" view), onStart (an
 // answer came: the network is up).
 const servedOf = v => (typeof v === 'string' && MODEL_ID_RE.test(v) ? v : null);
-async function streamOnce(provider, req, signal, id, { onRequest = null, onStart = null } = {}) {
-  const out = { text: '', usage: null, finish: null, requestId: null, rateLimit: null, error: null, started: false, served: null };
+async function streamOnce(provider, req, signal, id, { onRequest = null, onStart = null, now = Date.now } = {}) {
+  // firstAt: when the model first wrote (reasoning or text), so its pace leaves out the prompt's reading.
+  const out = { text: '', usage: null, finish: null, requestId: null, rateLimit: null, error: null, started: false, served: null, reasoned: false, firstAt: null };
   try {
     for await (const ev of provider.stream(req, { signal, onRequest })) {
       if (ev.type === 'start') {
@@ -255,8 +256,13 @@ async function streamOnce(provider, req, signal, id, { onRequest = null, onStart
         out.rateLimit = ev.rateLimit ?? null;
         out.served = servedOf(ev.model) ?? out.served;
         try { onStart?.(); } catch { /* a hook never ends the call */ }
-      } else if (ev.type === 'text') out.text += ev.delta;
-      else if (ev.type === 'usage') { out.usage = ev.usage; out.served = servedOf(ev.usage?.model) ?? out.served; }
+      } else if (ev.type === 'text') { out.text += ev.delta; out.firstAt ??= now(); }
+      else if (ev.type === 'reasoning') { out.reasoned = true; out.firstAt ??= now(); }
+      else if (ev.type === 'usage') {
+        out.usage = ev.usage;
+        out.served = servedOf(ev.usage?.model) ?? out.served;
+        if (ev.usage?.reasoning > 0) out.reasoned = true; // hidden reasoning, counted (OpenAI's reasoning_tokens)
+      }
       else if (ev.type === 'done') out.finish = ev.finish;
       else if (ev.type === 'error') out.error = ev.error;
     }
@@ -264,7 +270,27 @@ async function streamOnce(provider, req, signal, id, { onRequest = null, onStart
     out.error = makeError({ kind: signal?.aborted ? 'interrupted' : 'unknown', provider: id, aborted: signal?.aborted || undefined, code: 'stream_threw' });
   }
   if (!out.error && !out.finish) out.error = makeError({ kind: 'unknown', provider: id, code: 'no_finish' });
+  // Thinking an Other server sent as the reply's own text is reasoning, never the reply (a failed attempt
+  // keeps its text: it says generation began, failedMidReply). The AI companies' own APIs never do this.
+  const thought = out.error || provider.manifest?.custom !== true ? null : splitThink(out.text);
+  if (thought) { out.text = thought.text; out.reasoned = true; }
   return out;
+}
+
+/**
+ * A reply's thinking sent as its text: DeepSeek-R1 and Qwen3 write it "within <think> </think> tags", and a
+ * server that doesn't take it out sends it as text: LM Studio before 0.4.7 (its separate reasoning_content
+ * became the default then), llama.cpp run with --reasoning-format none, some gateways, older Ollama. A
+ * leading <think> block, or, where the server's template opened it in the prompt, the text up to a lone
+ * </think>, goes: → {text: the reply after it} ('' when the block never closed: the reply's room ran out
+ * while it thought), or null for a reply with none.
+ */
+export function splitThink(text) {
+  if (typeof text !== 'string') return null;
+  const close = text.search(/<\/think>/i);
+  if (/^\s*<think>/i.test(text)) return { text: close < 0 ? '' : text.slice(close + 8).replace(/^\s+/, '') };
+  if (close >= 0 && !/<think>/i.test(text.slice(0, close))) return { text: text.slice(close + 8).replace(/^\s+/, '') };
+  return null;
 }
 
 // What a turn's attempts cost, and whether they reached the provider. inFlight: a request is out and
@@ -307,10 +333,17 @@ export function failedMidReply(r) {
  *   only the thinking room shrinks;
  * - 'room': where it can't go lower (no levels, or at its lowest already), the same level with more
  *   room: the output ceiling raised by the next level up's room (THINK_ROOM's next step above its own
- *   room for a model with no levels), never past the model's output ceiling (outputCeiling).
+ *   room for a model with no levels), never past the model's output ceiling (outputCeiling). A model with
+ *   no levels that was seen thinking (reasoned: Other's qwen3, deepseek-r1 or gpt-oss, which think by
+ *   default and count it in max_tokens) gets High's room at least: Minimal's 1,024 more never fit one.
+ * Within the run's time: never more than the failed attempt's pace (perSecond: tokens it wrote a second
+ * from its first one) writes in PACE_SHARE of the time left to write in (leftMs). A try that can't write
+ * at least THINK_ROOM's first step more than this one can't help, so there's none: a slow local model
+ * ends with its line now rather than the same line, or a timeout, a minute later.
  * → {how, req}, or null when there's no more room to give (the turn ends with its line).
  */
-export function roomForRetry(req, manifest, model) {
+export const PACE_SHARE = 0.8;
+export function roomForRetry(req, manifest, model, { reasoned = false, perSecond = 0, leftMs = Infinity } = {}) {
   if (!req) return null;
   const reply = Number.isInteger(req.replyTokens) && req.replyTokens > 0 ? req.replyTokens : MAX_TOKENS;
   const ceiling = outputCeiling(manifest, model);
@@ -320,9 +353,11 @@ export function roomForRetry(req, manifest, model) {
   const at = levels.indexOf(req.effort);
   const next = at >= 0 ? levels[at + 1] : undefined;
   const room = thinkRoom(req.effort ?? null, manifest, model);
-  const more = next ? THINK_ROOM[next] : THINK_ROOM[EFFORT_LEVELS.find(l => THINK_ROOM[l] > room)] ?? 0;
-  const maxTokens = Math.min(req.maxTokens + more, ceiling);
-  return maxTokens > req.maxTokens ? { how: 'room', req: { ...req, maxTokens } } : null;
+  const step = THINK_ROOM[EFFORT_LEVELS.find(l => THINK_ROOM[l] > room)] ?? 0;
+  const more = next ? THINK_ROOM[next] : reasoned && !levels.length ? Math.max(step, THINK_ROOM.high) : step;
+  let maxTokens = Math.min(req.maxTokens + more, ceiling);
+  if (perSecond > 0 && leftMs < Infinity) maxTokens = Math.min(maxTokens, Math.floor(perSecond * Math.max(0, leftMs) / 1000 * PACE_SHARE));
+  return maxTokens >= req.maxTokens + THINK_ROOM.minimal ? { how: 'room', req: { ...req, maxTokens } } : null;
 }
 
 /** Does this model have thinking levels (the Thinking menu in the window, Thinking in the app)? */
@@ -413,6 +448,17 @@ export function createLocalBackend(handlers = {}, opts = {}) {
   const manifests = opts.manifests ?? loadManifests({ onWarning: w => log('byok-manifest-warn', { provider: w.id, reason: String(w.reason).slice(0, 160) }) });
   const priceBook = opts.priceBook ?? createPriceBook();
   let settings = settingsOf(opts.config);
+  // What this session learned of an Other model (by its address and id): the thinking controls its server
+  // reported (provider.thinking; undefined until read), the room a reply needed once it was seen thinking,
+  // and the pace it last answered at (tokens a second from its first), so later turns ask for what the
+  // model takes and don't waste a first try thinking its room away, within what that pace writes in a
+  // run (PACE_SHARE of it). A run that times out forgets the room: the next turn learns it again.
+  const learned = new Map();
+  const learnedOf = p => {
+    const key = `${p.manifest.baseUrl}\u0000${p.model}`;
+    if (!learned.has(key)) learned.set(key, { options: undefined, room: 0, pace: 0 });
+    return learned.get(key);
+  };
   const safe = (fn) => { try { return fn(); } catch (e) { log('byok-handler-error', { error: short(e) }); return undefined; } };
   const on = {
     ready: h => safe(() => handlers.onReady?.(h)),
@@ -517,7 +563,8 @@ export function createLocalBackend(handlers = {}, opts = {}) {
       ...(opts.fetch ? { fetch: opts.fetch } : {}),
       ...providerOpts,
     });
-    prov = { id: manifest.id, manifest, model, provider, local: manifest.local === true, name: manifest.name, modelName: listed?.label ?? model ?? '' };
+    // free: a server on this computer, or one at home serving its own model (customManifest's priceSource).
+    prov = { id: manifest.id, manifest, model, provider, local: manifest.local === true, free: manifest.local === true || manifest.priceSource === 'free', name: manifest.name, modelName: listed?.label ?? model ?? '' };
     return prov;
   }
   const names = () => {
@@ -812,6 +859,12 @@ export function createLocalBackend(handlers = {}, opts = {}) {
   }
 
   function finishFailed(t, err, { final = true, fallbackModel = null, model = null } = {}) {
+    // Out of time with a room it learned (the model got slower: the game on the same graphics card): the
+    // next turn starts from the reply's own again, and learns it at the pace it has then.
+    if (err.kind === 'timeout' && t.p?.manifest?.custom === true && learnedOf(t.p).room) {
+      Object.assign(learnedOf(t.p), { room: 0, pace: 0 });
+      log('byok-thinking-room', { provider: t.p.id, room: 0, reason: 'timeout' });
+    }
     // What went out, booked once: nothing for a turn refused before it could send, or whose request
     // never left. At a bridge stop the ledger stays 'sending' and the next start books it at its
     // estimate (settleLeft), so it isn't booked here too.
@@ -914,12 +967,17 @@ export function createLocalBackend(handlers = {}, opts = {}) {
     // The first meeting's cap is the reply's (fix-102): a model that thinks gets its level's thinking
     // room on top of it (buildRequest, THINK_ROOM), so its thinking never eats the short answer.
     const introCap = intro && GREETING_RE.test(t.typed);
-    return buildRequest({
+    const req = buildRequest({
       pack, memory: mem, game, history, userText: t.wowKind === 'msg' ? t.typed : '',
       pseudonymizer, sendNames: settings.sendNames, identity: settings.identity,
       manifest: p.manifest, model: p.model, effort: t.effort, safetyId: safetyId(),
       maxTokens: Math.max(1, Math.min(MAX_TOKENS, perTurnOut, p.manifest.limits?.maxOutputTokens || MAX_TOKENS, introCap ? INTRO_MAX_TOKENS : MAX_TOKENS)),
     });
+    if (p.manifest.custom !== true) return req;
+    // Other: what its server said the model takes, and the room it needed to think and still answer.
+    const l = learnedOf(p);
+    const room = l.pace > 0 ? Math.min(l.room, Math.floor(l.pace * runMs / 1000 * PACE_SHARE)) : l.room;
+    return { ...req, ...(l.options ? { serverOptions: l.options } : {}), ...(room > req.maxTokens ? { maxTokens: room } : {}) };
   }
 
   // The logbook for an event or a recap that carries a state (RT-5): deterministic, before any model.
@@ -983,6 +1041,7 @@ export function createLocalBackend(handlers = {}, opts = {}) {
     // One wall-clock limit for the whole run (PV-7): attempts and retry waits. A turn held for the
     // network starts a fresh one when it goes (nothing had left).
     let deadline = deadlineAfter(runMs);
+    let runFrom = clock(); // the run limit's start, for the time a retry has left (roomForRetry)
     let sig = AbortSignal.any([signal, deadline]);
     const abortedErr = () => makeError({ kind: 'interrupted', provider: p.id, aborted: true });
     const timeoutErr = () => makeError({ kind: 'timeout', provider: p.id, phase: 'run', afterMs: runMs, retryable: false });
@@ -1016,8 +1075,14 @@ export function createLocalBackend(handlers = {}, opts = {}) {
       if (stopped || signal.aborted) return finishFailed(t, abortedErr());
       if (deadline.aborted) return finishFailed(t, timeoutErr());
     }
+    // Other: what its server says the model takes (Ollama's thinking controls), read once a session.
+    if (p.manifest.custom === true && typeof p.provider.thinking === 'function' && learnedOf(p).options === undefined) {
+      const o = await p.provider.thinking({ model: p.model, signal });
+      if (o !== undefined) { learnedOf(p).options = o; log('byok-thinking', { provider: p.id, options: o }); }
+      if (stopped || signal.aborted) return finishFailed(t, abortedErr());
+    }
     // A server on this computer (Other at localhost) costs nothing: no reservation at the unknown-model ceiling.
-    const price = p.local ? localPrice(p.id, p.model) : priceBook.priceFor(p.id, p.model, clock());
+    const price = p.free ? localPrice(p.id, p.model) : priceBook.priceFor(p.id, p.model, clock());
     let built;
     try {
       built = build(t, p, true);
@@ -1058,12 +1123,17 @@ export function createLocalBackend(handlers = {}, opts = {}) {
     let attempt = 0;
     let trimmed = false;
     let emptied = null; // an empty reply's finish ('length' | 'stop') once it was tried again
+    let learnRoom = 0; // the room a thinking Other model got on its one more try: kept once it answers
+    let pace = 0; // the last attempt's tokens a second from its first, where its usage counts them
     let result = null;
     for (;;) {
       const c = cut();
       if (c) return finishFailed(t, c); // stopped, or out of time, before this attempt left
       spend.inFlight = true;
-      const one = await streamOnce(p.provider, built, sig, p.id, hooks('turn'));
+      const sentAt = clock();
+      const one = await streamOnce(p.provider, built, sig, p.id, { ...hooks('turn'), now: clock });
+      const endAt = clock();
+      pace = one.firstAt != null && endAt > one.firstAt && one.usage?.output > 0 ? one.usage.output * 1000 / (endAt - one.firstAt) : 0;
       addAttempt(spend, one, price);
       if (stopped) return finishFailed(t, abortedErr());
       noteRateLimit(one.rateLimit);
@@ -1083,17 +1153,24 @@ export function createLocalBackend(handlers = {}, opts = {}) {
       // No text: try once more (it counts as this turn, as the trim's try does). Finished with
       // nothing: as it was. Out of room (a thinking model that thought its whole ceiling away): at
       // the model's lowest thinking level with the same reply ceiling, or, where it can't go lower,
-      // the same level with more room, after the player's spend cap is checked against this turn's
-      // spend so far and the bigger request's estimate; never the same request again. Empty again,
-      // no more room, or the cap says no: its own line.
+      // the same level with more room (High's at least for a model with no levels seen thinking, in
+      // the time the run has left at this attempt's pace), after the player's spend cap is checked
+      // against this turn's spend so far and the bigger request's estimate; never the same request
+      // again. Empty again, no more room, or the cap says no: its own line.
       if (err.kind === 'empty_reply' && !emptied) {
         emptied = err.code;
-        const from = { effort: built.effort ?? undefined, maxTokens: built.maxTokens };
+        const from = { effort: built.effort ?? undefined, maxTokens: built.maxTokens, reasoned: one.reasoned };
         let how = 'same';
         if (err.code === 'length') {
-          const next = roomForRetry(built, p.manifest, p.model);
+          // Its pace: the tokens it wrote (its whole ceiling, unless its usage says) from its first one (a
+          // cold model's load and the prompt's reading left out), and the time left to write in once a
+          // retry has waited as long again for its first.
+          const wrote = one.usage?.output > 0 ? one.usage.output : built.maxTokens;
+          const firstAt = one.firstAt ?? sentAt;
+          const leftMs = runMs - (clock() - runFrom) - (firstAt - sentAt);
+          const next = roomForRetry(built, p.manifest, p.model, { reasoned: one.reasoned, perSecond: endAt > firstAt ? wrote * 1000 / (endAt - firstAt) : 0, leftMs });
           if (!next) {
-            log('byok-empty-retry', { chat: t.chatId, finish: err.code, ...from, skipped: 'no_room', requestId: err.requestId });
+            log('byok-empty-retry', { chat: t.chatId, finish: err.code, ...from, skipped: 'no_room', leftMs, requestId: err.requestId });
             return finishFailed(t, err);
           }
           if (next.how === 'room') {
@@ -1109,6 +1186,7 @@ export function createLocalBackend(handlers = {}, opts = {}) {
           }
           how = next.how;
           built = next.req;
+          if (how === 'room' && one.reasoned && p.manifest.custom === true) learnRoom = built.maxTokens;
         }
         log('byok-empty-retry', { chat: t.chatId, finish: err.code, how, ...from, retryEffort: built.effort ?? undefined, retryMaxTokens: built.maxTokens, requestId: err.requestId });
         continue;
@@ -1125,6 +1203,7 @@ export function createLocalBackend(handlers = {}, opts = {}) {
           return finishFailed(t, localWrite(e));
         }
         deadline = deadlineAfter(runMs);
+        runFrom = clock();
         sig = AbortSignal.any([signal, deadline]);
         log('byok-resend', { chat: t.chatId, heldMs: clock() - t.at });
         continue;
@@ -1157,6 +1236,12 @@ export function createLocalBackend(handlers = {}, opts = {}) {
     }
     // A stop or a forget that came as the reply finished: the player asked for nothing more of it.
     if (signal.aborted) return finishFailed(t, abortedErr());
+    // The room a thinking Other model needed to answer: its next turns start with it, at the pace it answered.
+    if (p.manifest.custom === true) {
+      const l = learnedOf(p);
+      if (learnRoom > l.room) { l.room = learnRoom; log('byok-thinking-room', { provider: p.id, room: learnRoom }); }
+      if (l.room && pace > 0) l.pace = pace;
+    }
 
     // The reply: datamarks off, then the real names back. A map block the model got wrong isn't
     // repaired with a second paid call (systems plan D6): the core says "Couldn't draw the route".
@@ -1423,7 +1508,7 @@ export function createLocalBackend(handlers = {}, opts = {}) {
   function capReason() {
     const s = caps.snapshot();
     if (!Number.isInteger(s.capMicros)) return null; // no cap set: the public build has none of its own
-    const free = current().local;
+    const free = current().free;
     if (s.held && !free) return s.held; // 'load_error': today's spend couldn't be read, not spent (BR-09)
     if (!free && s.spentMicros >= s.capMicros) return 'cap_spend';
     if (!capHit || capHit.day !== s.day) return null;
@@ -1434,7 +1519,7 @@ export function createLocalBackend(handlers = {}, opts = {}) {
   }
   function usageView() {
     const s = caps.snapshot();
-    const free = current().local;
+    const free = current().free;
     let needs = null;
     if (keyState === 'invalid' || keyState === 'expired') needs = 'key_invalid';
     else if (trouble === 'out_of_credit') needs = 'out_of_credit';

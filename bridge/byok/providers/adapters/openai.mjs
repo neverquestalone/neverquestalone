@@ -119,7 +119,9 @@ export function chatRequest(manifest, req, { authHeaders = {}, requestOptions = 
   if (sys) messages.push({ role: 'system', content: sys });
   for (const m of req.messages || []) messages.push({ role: m.role, content: String(m.content ?? '') });
   const core = { model: req.model, messages, max_tokens: req.maxTokens ?? manifest.limits.maxOutputTokens };
-  const body = requestBody(manifest.defaultRequestOptions, effortFragment(manifest, req.model, req.effort), requestOptions, core);
+  // What the player's server said this model takes (Other: provider.thinking, backend), under the player's own options.
+  const options = req.serverOptions ? { ...req.serverOptions, ...(requestOptions || {}) } : requestOptions;
+  const body = requestBody(manifest.defaultRequestOptions, effortFragment(manifest, req.model, req.effort), options, core);
   body.messages = messages;
   body.stream = true;
   body.stream_options = { ...(body.stream_options || {}), include_usage: true };
@@ -181,7 +183,11 @@ export async function* chatParse(res, ctx) {
       const d = choice.delta || {};
       if (d.content) yield { type: 'text', delta: String(d.content) };
       if (d.refusal) refused = true;
-      if (d.reasoning || d.reasoning_content || d.reasoning_details || d.tool_calls || d.refusal) yield { type: 'progress' };
+      // Reasoning (DeepSeek's and most gateways' reasoning_content, Ollama's and LM Studio's reasoning,
+      // OpenRouter's reasoning_details) keeps the stream alive and says the model thought (an empty reply
+      // that ran out of room then gets more, backend roomForRetry).
+      const reasoned = !!(d.reasoning || d.reasoning_content || d.reasoning_details);
+      if (reasoned || d.tool_calls || d.refusal) yield { type: 'progress', reasoning: reasoned };
       if (choice.finish_reason === 'error') { yield* failed(); return; }
       // DeepSeek's own stop when its inference system runs out of capacity mid-reply
       // (api-docs.deepseek.com, create-chat-completion): the service is busy, so the turn waits and

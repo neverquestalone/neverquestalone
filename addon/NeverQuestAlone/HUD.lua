@@ -22,7 +22,8 @@
 --   - The route you follow: its name with Re-plan, Skip and End; stop n of m
 --     on a segmented bar; an arrow with the stop, its distance and which way
 --     ("ahead", "to your left"); what to do there; each quest's objectives as a
---     list, with your live counts. While you're a ghost the route steps aside
+--     list, with your live counts, and under a quest that's a step of a chain,
+--     where it leads (Chains.lua). While you're a ghost the route steps aside
 --     (maintainer): only the arrow to your corpse, how far and which way.
 -- Minimized, in combat and while the window is open, it's one bar: the arrow,
 -- the quest it points to, the distance and the route's bar (a box you're
@@ -69,6 +70,10 @@ L.SEGMENTS_MAX, L.SEG_H, L.SEG_GAP = 12, 4, 2
 L.ARROW, L.ARROW_COL = 44, 48 -- the route's arrow, in a column this wide (28 read too small in game)
 L.STOP_X = L.PAD + L.ARROW_COL + L.CONTROLS
 L.BULLET, L.BULLET_X = 10, L.PAD + 2 -- the objectives' list
+-- A chained quest's mark, on the bullets' column: the quest log's own dungeon and raid icons (Forever's
+-- QUEST_TAG_ATLAS, Blizzard_FrameXMLBase/Constants.lua), a reward's own item icon.
+L.CHAIN_ICON = 12
+L.CHAIN_ATLAS = { dungeon = "questlog-questtypeicon-dungeon", raid = "questlog-questtypeicon-raid" }
 -- The one-line HUD (minimized, in combat, with the window open).
 L.BAR_ARROW = 30 -- the one line's arrow
 L.CORNER_BTN = 24 -- the corner's buttons
@@ -774,16 +779,18 @@ H.SplitObjective = SplitObjective
 -- one green row ("turn in"); a turned-in or missing one, one grey row. An
 -- objective with no count that the stop's label or note already says isn't
 -- said again, nor a quest with nothing left to say. Rows: { kind = "quest" |
--- "row", text, count, done, color }.
+-- "row", text, count, done, color, id (a quest's name, a ready quest's row and
+-- one to pick up here: where its chain leads goes under it) }.
 local function QuestRows(r, label, note)
 	local said = (label .. "\n" .. note):lower()
 	local rows = {}
 	for _, q in ipairs(type(r.quests) == "table" and r.quests or {}) do
 		local title = tostring(q.title or "")
 		if q.state == "ready" then
-			rows[#rows + 1] = { kind = "row", text = title, count = "turn in", done = true, color = L.GREEN }
+			rows[#rows + 1] = { kind = "row", text = title, count = "turn in", done = true, color = L.GREEN, id = q.id, ready = true }
 		elseif q.state == "done" or q.state == "missing" then
-			rows[#rows + 1] = { kind = "row", text = title, count = tostring(q.what or ""), done = q.state == "done", color = L.GREY }
+			-- [UC-02] One to pick up here (Map.lua's q.pickup) shows where it leads too.
+			rows[#rows + 1] = { kind = "row", text = title, count = tostring(q.what or ""), done = q.state == "done", color = L.GREY, id = q.pickup and q.id or nil }
 		else
 			local items = {}
 			for _, o in ipairs(q.objectives or {}) do
@@ -2066,7 +2073,7 @@ local function Build()
 	h.distMeta = Text(f, "M", 1)
 	h.note = Text(f, "B", 4)
 	h.note:SetWidth(L.W - 2 * L.PAD)
-	h.qTitles, h.qRows = {}, {}
+	h.qTitles, h.qRows, h.qChains = {}, {}, {}
 
 	-- Every 0.1 s: the arrow and the distance, and what times out.
 	f:SetScript("OnUpdate", function(self, elapsed)
@@ -2117,6 +2124,7 @@ local function LayoutKey(v)
 		v.spend or "", v.warn and "w" or "", v.stateOk and "s" or "", -- [UX-3, C-13, C-23]
 		v.setup and v.setup.key or "", -- [G1]
 		v.stuck or "", -- [DR-07] the row's button says the stuck send's action (its text; nothing moves)
+		ns.Chains and ns.Chains.On() and "q" or "", -- Settings' Quest Chains: the quests' chain lines
 	}, "\30")
 end
 
@@ -2174,18 +2182,63 @@ local function QuestRow(i)
 	end
 	return row
 end
-local function HideQuestPieces(fromTitle, fromRow)
+local function HideQuestPieces(fromTitle, fromRow, fromChain)
 	for i = fromTitle, #h.qTitles do h.qTitles[i]:Hide() end
 	for i = fromRow, #h.qRows do
 		local row = h.qRows[i]
 		row.mark:Hide(); row.text:Hide(); row.count:Hide()
 	end
+	for i = fromChain or 1, #h.qChains do h.qChains[i].mark:Hide(); h.qChains[i].text:Hide() end
+end
+
+-- Where a quest's chain leads (Chains.lua), 4 under its name, its ready row or
+-- its row to pick it up, so a quest that looks minor shows what it's a step of:
+-- the payoff's mark on the bullets' column (the quest log's dungeon or raid
+-- icon, or the reward's own icon), then the quest page's words in the meta
+-- style, the place in gold and a reward's name in its quality's colour, "Leads
+-- to The Deadmines · step 1 of 7". Never a link: nothing on the HUD takes the
+-- mouse [UC-01]. Wider than the list, it says where without the step, in two
+-- lines at most [UC-03]. Nothing for a quest that leads to nothing for this
+-- character, for a ready last step of a chain to a place (you've been [UC-04]),
+-- or with Settings' Quest Chains off. n: the lines used so far. Returns y, n.
+local function ChainLine(n, id, y, ready)
+	local text, item, two, kind
+	if ns.Chains and id then text, item, two, kind = ns.Chains.Line(id, Hex(L.GOLD)) end
+	if ready and kind ~= "item" and text and not ns.Chains.For(id).next then text = nil end
+	if not text then return y, n end
+	n = n + 1
+	local c = h.qChains[n]
+	if not c then
+		c = { mark = h.frame:CreateTexture(nil, "OVERLAY"), text = Text(h.frame, "M", 2) }
+		c.mark:SetSize(L.CHAIN_ICON, L.CHAIN_ICON)
+		h.qChains[n] = c
+	end
+	y = y + L.LINE
+	local icon = item and Try(C_Item and C_Item.GetItemIconByID, item)
+	if icon then
+		c.mark:SetTexture(icon)
+		c.mark:SetTexCoord(0.08, 0.92, 0.08, 0.92) -- the icon without its border, as the bags crop it
+	end
+	-- Off the bullets' centre by half the size's difference; none where this client has no such icon [UC-06].
+	c.mark:SetShown(icon ~= nil or (not item and Art(c.mark, L.CHAIN_ATLAS[kind])))
+	c.mark:ClearAllPoints()
+	c.mark:SetPoint("TOPLEFT", h.frame, "TOPLEFT", L.BULLET_X - (L.CHAIN_ICON - L.BULLET) / 2, -y)
+	local x = L.BULLET_X + L.BULLET + 6
+	local w = L.W - L.PAD - x -- [UC-05] to the right gutter, as the counts end
+	c.text:SetWidth(w)
+	c.text:SetText(text)
+	if two then
+		local full = Try(c.text.GetUnboundedStringWidth, c.text) or Try(c.text.GetStringWidth, c.text)
+		if tonumber(full) and full > w then c.text:SetText(two:match("^[^\n]+")) end
+	end
+	local bottom = Put(c.text, y, x)
+	return math.max(bottom, y + L.CHAIN_ICON), n
 end
 
 -- The quests' objectives, as the quest tracker lists them: a quest's name, then
 -- a bullet per objective, its words and its count; done ones checked and grey.
 local function RenderQuests(rows, y)
-	local nt, nr, prev = 0, 0, nil
+	local nt, nr, nc, prev, spaced = 0, 0, 0, nil, false
 	for _, it in ipairs(rows) do
 		if it.kind == "quest" then
 			-- A quest's name: 8 under the rows before it, as the game's quest log
@@ -2197,10 +2250,13 @@ local function RenderQuests(rows, y)
 			t:SetText(qt and it.id and qt(it.id, ns.Escape(it.text)) or ns.Escape(it.text))
 			Paint(t, L.GOLD) -- the tracker's header colour, where no colour is set
 			y = Put(t, y + (prev and L.CONTROLS or 0))
+			y, nc = ChainLine(nc, it.id, y)
+			spaced = false
 		else
-			-- A row: 4 under the name or the row before it, as the tracker spaces them.
+			-- A row: 4 under the name or the row before it, as the tracker spaces them;
+			-- 8 under a row's chain line, so the line reads as its own row's [UC-07].
 			nr = nr + 1
-			y = y + (prev and L.LINE or 0)
+			y = y + (spaced and L.CONTROLS or (prev and L.LINE or 0))
 			local row = QuestRow(nr)
 			local c = it.color or (it.done and L.GREY or L.LIGHT)
 			local countW = 0
@@ -2229,10 +2285,13 @@ local function RenderQuests(rows, y)
 			Paint(row.text, c)
 			local bottom = Put(row.text, y, L.BULLET_X + L.BULLET + 6)
 			y = math.max(bottom, y + L.BULLET + 2)
+			local had = nc
+			if it.id then y, nc = ChainLine(nc, it.id, y, it.ready) end -- a ready quest's row, or one to pick up
+			spaced = nc > had
 		end
 		prev = it.kind
 	end
-	HideQuestPieces(nt + 1, nr + 1)
+	HideQuestPieces(nt + 1, nr + 1, nc + 1)
 	return y
 end
 

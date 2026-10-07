@@ -17,6 +17,10 @@ const LAYERS = { BACKGROUND: 0, BORDER: 1, ARTWORK: 2, OVERLAY: 3, HIGHLIGHT: 4 
 const GLYPHS = [
   [/HumanSkull|BonesIcon/i, { glyph: '💀', bg: '#2a2622' }],
   [/INV_Misc_QuestionMark/i, { glyph: '?', color: '#ff3a2a', bg: '#3a1a14' }],
+  // The quest log's own quest-type marks (QUEST_TAG_ATLAS) and an item's own icon, as stand-ins.
+  [/questlog-questtypeicon-dungeon/i, { glyph: '⛫', color: '#ffd100' }],
+  [/questlog-questtypeicon-raid/i, { glyph: '☠', color: '#ffd100' }],
+  [/\\Icons\\/i, { glyph: '◆', color: '#c8a46a', bg: '#2a2014' }],
   [/MinimapArrow|Navigation-Tracked-Arrow/i, { arrow: true }],
   [/UI-RefreshButton/i, { glyph: '↻', color: '#ffd100' }],
   [/GossipGossipIcon|UI-ChatIcon-Chat-Up/i, { glyph: '💬' }],

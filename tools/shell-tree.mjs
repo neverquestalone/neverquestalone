@@ -232,6 +232,11 @@ export const NEVER = Object.freeze([
   // one-word change would fail it there).
   'tests/byok/public_docs_test.mjs', 'tests/string_lint_test.mjs', 'tests/fixtures/style/', 'tests/shotproof_test.mjs',
   'tests/screenshot_parity_test.mjs', 'tests/shell_export_test.mjs', 'tests/shell_boundary_test.mjs', 'tests/fixtures/shell-boundary-ledger.json',
+  // The steward (docs/STEWARD.md): this repo's own operations, which watch the public repo from here. Its code reads
+  // this repo's issues, Actions logs and secrets' purposes, its baseline names the public repo's guards, its corpus is
+  // this repo's history, and its workflows run only here; a fork has no use for any of it.
+  'tools/steward/', 'tests/steward_test.mjs', 'tests/fixtures/steward/', 'docs/STEWARD.md',
+  '.github/workflows/steward.yml', '.github/workflows/steward-watch.yml',
 ]);
 
 /** Test files that go although they name a path the export doesn't hold, each with why that's fine. */

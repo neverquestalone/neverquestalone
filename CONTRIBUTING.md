@@ -13,7 +13,7 @@ We build NeverQuestAlone from a private repository, and each release copies its 
 
 ## License
 
-Everything you contribute is under the [MIT license](LICENSE), like the rest of this repository.
+Everything you contribute is under the [MIT license](LICENSE), like the rest of NeverQuestAlone’s code.
 
 ## Before you open one
 

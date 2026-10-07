@@ -4,7 +4,7 @@
 // an estimate that is a true upper bound and never silently $0.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { priceFor } from '../../bridge/byok/usage/prices.mjs';
+import { priceFor, localPrice } from '../../bridge/byok/usage/prices.mjs';
 import { costMicros, estimateMicros, estimateTurn, isFreePrice, meterReply, normalizeUsage, turnTokens, typicalCost, typicalThink, TYPICAL_THINK_SHARE, TYPICAL_TURN, TYPICAL_PREFIX, BYTES_PER_TOKEN, BLOCK_OVERHEAD_TOKENS } from '../../bridge/byok/usage/meter.mjs';
 import { loadPack } from '../../bridge/byok/runtime/pack.mjs';
 import { THINK_ROOM } from '../../bridge/byok/providers/util.mjs';
@@ -73,6 +73,12 @@ test('reasoning bills on top of output only where the provider\'s output count l
     assert.equal(p.reasoningInOutput, true, model);
     assert.equal(costMicros({ ...typedUncached, reasoning: 1000 }, p), costMicros(typedUncached, p), model);
     assert.equal(meterReply({ ...typedUncached, reasoning: 1000 }, p).out, 350, `${model} out`);
+  }
+  // Other (Chat Completions: completion_tokens hold the reasoning): once, priced or free (a server here).
+  for (const p of [priceFor('custom', 'deepseek/deepseek-r1', AT), localPrice('custom', 'qwen3:8b')]) {
+    assert.equal(p.reasoningInOutput, true, p.model);
+    assert.equal(meterReply({ ...typedUncached, reasoning: 1000 }, p).out, 350, `${p.model} out`);
+    assert.equal(costMicros({ ...typedUncached, reasoning: 1000 }, p), costMicros(typedUncached, p), p.model);
   }
   // xAI's reasoning is billed on top (its default), and a usage-side flag can't lower a price.
   const grok = priceFor('xai', 'grok-4.3', AT);

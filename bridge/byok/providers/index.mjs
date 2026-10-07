@@ -25,6 +25,8 @@
 //   {type:'usage', usage:{input, output, cacheRead, cacheWrite, reasoning, costUsd?, exact, partial?}}
 //   (partial: the stream failed after generation began; what was counted so far, right before the error)
 //   {type:'done', finish:'stop'|'length'|'refusal'|'content_filter'} · {type:'error', error}
+//   {type:'reasoning'}: once, when the model's reasoning first shows (a reasoning block or item, or
+//   reasoning deltas), so an empty reply that ran out of room is known to have spent it thinking
 // Usage is normalized: `input` is the uncached input, so the prompt was
 // input + cacheRead + cacheWrite; `output` includes reasoning; `reasoning` is
 // that part of it; `exact` means costUsd came from the provider (OpenRouter)
@@ -69,6 +71,9 @@ export const CUSTOM_ID = 'custom';
 const CUSTOM_HTTP_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]']);
 /** The longest base URL the Other form takes. */
 export const CUSTOM_URL_MAX = 512;
+/** How long a turn waits for an Other server's thinking controls (provider.thinking), and the most it reads. */
+export const THINKING_READ_MS = 3000;
+const SHOW_READ_MAX = 2 * 1024 * 1024;
 /** A model id as the Other form takes it (an OpenAI-compatible service's own id: "openai/gpt-5-mini", "qwen3:8b"). */
 export const CUSTOM_MODEL_RE = /^[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,127}$/;
 
@@ -405,11 +410,39 @@ export const CUSTOM_HOST_OPTIONS = Object.freeze({
 });
 
 /**
+ * What an Other server on this computer or the home network asks of a model that thinks by default, from the
+ * thinking controls it reports for that model: Ollama's POST /api/show answers `thinking: {values, default}`
+ * (Ollama 0.34.3 and later; docs/capabilities/thinking.mdx: "values can contain booleans (true or false) for
+ * on/off controls. It can also contain model-defined strings for named levels", "values: [false] means the
+ * model does not support thinking"). Its OpenAI-compatible chat takes them as reasoning_effort
+ * (docs/api/openai-compatibility.mdx: "supported names are applied exactly", "\"none\" requests false"):
+ * - false among the values (qwen3:8b, whose template has /think and /no_think): "none", no thinking, so Other's
+ *   1,200-token reply is the answer;
+ * - named levels only (gpt-oss: low, medium, high; its reasoning can't be turned off): the lowest;
+ * - true alone (a template that always opens a thinking block: qwen3:30b, the *-thinking-2507 models), false
+ *   alone (no thinking), or nothing reported (deepseek-r1, whose template Ollama has no thinking metadata for;
+ *   any model on an older Ollama; LM Studio, llama.cpp): nothing. An empty reply that thought its room away
+ *   gets more room instead (backend roomForRetry).
+ * → the request options, or null.
+ */
+export function thinkingOptions(show) {
+  const values = isObj(show) && isObj(show.thinking) && Array.isArray(show.thinking.values) ? show.thinking.values : null;
+  if (!values) return null;
+  if (values.includes(false)) return values.includes(true) || values.some(v => typeof v === 'string') ? { reasoning_effort: 'none' } : null;
+  const named = values.filter(v => typeof v === 'string' && /^[a-z][a-z0-9_-]{0,31}$/i.test(v));
+  if (!named.length) return null;
+  const lowest = EFFORT_LEVELS.find(l => l !== 'off' && named.includes(l)) ?? named[0];
+  return { reasoning_effort: lowest };
+}
+
+/**
  * The Other card as a working manifest: the template (custom.json) with the player's base URL, its
  * one host (also its name), and the model (listed, so the app names it). null when the settings don't pass
  * checkCustomUrl or name no model. A server on this computer is local: $0, and its messages stay
  * here (the template's privacy.local replaces privacy); not for a cloud model it serves (CLOUD_MODEL_RE):
- * that's cloud privacy and the service's price, as any service's.
+ * that's cloud privacy and the service's price, as any service's. One at home is free too, with cloud privacy
+ * (its messages go to that computer). A known service's own request options (CUSTOM_HOST_OPTIONS) go with
+ * every request.
  */
 export function customManifest(template, custom) {
   if (!template || template.custom !== true || !isObj(custom)) return null;
@@ -420,7 +453,8 @@ export function customManifest(template, custom) {
   const { local: localPrivacy, ...privacy } = base.privacy;
   // Named by its host ("openrouter.ai", "localhost:11434"): all the app knows of the service.
   const name = new URL(c.baseUrl).host;
-  const local = c.local && !CLOUD_MODEL_RE.test(model);
+  const cloud = CLOUD_MODEL_RE.test(model);
+  const local = c.local && !cloud;
   const out = {
     ...base,
     name,
@@ -430,7 +464,8 @@ export function customManifest(template, custom) {
     local,
     models: { ...base.models, default: model, list: [{ id: model, label: model, costRank: 0, effort: false }] },
     privacy: local && isObj(localPrivacy) ? { ...privacy, ...localPrivacy } : privacy,
-    priceSource: local ? 'free' : base.priceSource,
+    // A server at home costs nothing either (README: "Free"), though its messages leave this computer.
+    priceSource: local || (c.lan === true && !cloud) ? 'free' : base.priceSource,
     defaultRequestOptions: structuredClone(Object.hasOwn(CUSTOM_HOST_OPTIONS, c.host) ? CUSTOM_HOST_OPTIONS[c.host] : base.defaultRequestOptions),
   };
   return validateManifest(out).length ? null : deepFreeze(out);
@@ -716,6 +751,7 @@ export function createProvider(manifest, opts = {}) {
     let idleTimer = null;
     let started = false;
     let reasoning = false; // inside a reasoning block: the idle timer waits
+    let reasoned = false; // the model reasoned in this stream (said once, {type:'reasoning'})
     const armIdle = () => { clearTimeout(idleTimer); idleTimer = reasoning ? null : setTimeout(() => stop('idle'), t.idleMs); };
     const touch = () => { if (!started) { started = true; clearTimeout(firstTimer); } armIdle(); };
     const failure = (e, stage) => {
@@ -777,8 +813,12 @@ export function createProvider(manifest, opts = {}) {
         truncated: () => classify(manifest, { networkPhase: 'after_send', networkError: { code: 'ERR_STREAM_TRUNCATED' } }),
       };
       for await (const ev of adapter.parse(res, ctx)) {
-        if (ev.type === 'thinking') { reasoning = ev.active !== false; touch(); continue; }
-        if (ev.type === 'progress') { touch(); continue; }
+        if (ev.type === 'thinking' || ev.type === 'progress') {
+          if (ev.type === 'thinking') reasoning = ev.active !== false;
+          touch();
+          if (!reasoned && (ev.type === 'thinking' ? reasoning : ev.reasoning === true)) { reasoned = true; yield { type: 'reasoning' }; }
+          continue;
+        }
         if (ev.type === 'text') { reasoning = false; touch(); }
         if (ev.type === 'error') {
           if (why) { yield emitError(failure(null, 'read')); return; }
@@ -786,7 +826,7 @@ export function createProvider(manifest, opts = {}) {
           return;
         }
         if (ev.type === 'usage') {
-          if (manifest.local) ev.usage = { ...ev.usage, costUsd: 0, exact: true };
+          if (manifest.local || manifest.priceSource === 'free') ev.usage = { ...ev.usage, costUsd: 0, exact: true };
           log('provider.usage', { provider: id, model: req.model, ...ev.usage });
         }
         clearTimeout(idleTimer); // a slow consumer isn't a stalled provider
@@ -828,7 +868,24 @@ export function createProvider(manifest, opts = {}) {
     return finish ? { ok: true, usage, finish } : { ok: false, error: makeError({ kind: 'unknown', provider: id }) };
   }
 
-  return Object.freeze({ id, manifest, validate, testCall, stream, reach });
+  // Other on this computer or at home: what the server reports of the model's thinking (thinkingOptions),
+  // from POST /api/show (no key sent). → request options or null when it answered (anything but an
+  // Ollama answers 404 or no such field: null), undefined when it couldn't be read (try again later).
+  async function thinking({ model, signal } = {}) {
+    const c = manifest.custom === true ? checkCustomUrl(manifest.baseUrl) : null;
+    if (!c?.ok || !(c.local || c.lan)) return null;
+    const timeout = AbortSignal.timeout(Math.min(t.requestMs, THINKING_READ_MS));
+    try {
+      const res = await fetchFn(new URL('/api/show', manifest.baseUrl).href, {
+        method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ model: model ?? manifest.models.default }),
+        signal: signal ? AbortSignal.any([signal, timeout]) : timeout, redirect: 'manual',
+      });
+      if (!res.ok) { await discard(res); return res.status >= 500 ? undefined : null; }
+      return thinkingOptions(parseJSON(await readText(res, SHOW_READ_MAX)));
+    } catch { return undefined; }
+  }
+
+  return Object.freeze({ id, manifest, validate, testCall, stream, reach, thinking });
 }
 
 export { classify, userLine, durWords, retryPlan, KINDS, RETRYABLE_KINDS, EGRESS_BLOCKED, EGRESS_STOPPED, needsRestart, parseRateLimit, parseRetryAfter, parseDuration } from './errors.mjs';

@@ -986,41 +986,47 @@ end
 -- The reward's link: the game's own, else one in its quality's colour with the name the data has, and a
 -- request for the game's (GET_ITEM_INFO_RECEIVED draws the line again).
 local waiting = {}
+local function QualityHex(p)
+	local color = type(ITEM_QUALITY_COLORS) == "table" and ITEM_QUALITY_COLORS[p[3]]
+	return type(color) == "table" and type(color.hex) == "string" and color.hex or QUALITY_HEX[p[3]] or "|cffffffff"
+end
 local function ItemLink(p)
 	local _, link = Try(C_Item and C_Item.GetItemInfo, p[2])
 	if type(link) == "string" and link:find("|Hitem:", 1, true) then return link end
 	waiting[p[2]] = true
 	Try(C_Item and C_Item.RequestLoadItemDataByID, p[2])
-	local color = type(ITEM_QUALITY_COLORS) == "table" and ITEM_QUALITY_COLORS[p[3]]
-	local hex = type(color) == "table" and type(color.hex) == "string" and color.hex or QUALITY_HEX[p[3]] or "|cffffffff"
-	return hex .. "|Hitem:" .. ns.Int(p[2]) .. "|h[" .. p[4] .. "]|h|r"
+	return QualityHex(p) .. "|Hitem:" .. ns.Int(p[2]) .. "|h[" .. p[4] .. "]|h|r"
 end
 
 -- What the line says the chain leads to: the place, or the reward's link ("or 2 more" when it's one of
--- the rare or better picks this class could take).
-local function LeadsTo(p)
+-- the rare or better picks this class could take). hex (the HUD's): the place in that colour, and the
+-- reward's name in its quality's, not a link (nothing on the HUD takes the mouse).
+local function LeadsTo(p, hex)
 	if p[1] == "item" then
-		local link = ItemLink(p)
+		local link = hex and (QualityHex(p) .. C.PayoffName(p) .. "|r") or ItemLink(p)
 		local more = tonumber(p[5]) or 0
 		if more > 0 then return ns.Fill("{link} or {n} more", { link = link, n = ns.Int(more) }) end
 		return link
 	end
-	return C.PayoffName(p)
+	local name = C.PayoffName(p)
+	return hex and (hex .. name .. "|r") or name
 end
 
--- The line under a quest's title, the reward's item id when it names one, and the line in two for a
--- page too narrow for it (the step on a line of its own, so a wrap never splits it); nil for none.
-function C.Line(id)
+-- The line under a quest's title, the reward's item id when it names one, the line in two for a page
+-- too narrow for it (the step on a line of its own, so a wrap never splits it), and what it leads to
+-- ("dungeon", "raid" or "item"); nil for none. hex: the HUD's form (LeadsTo), the place in that colour.
+function C.Line(id, hex)
 	if not C.On() then return nil end
 	local r = C.For(id)
 	if not r then return nil end
-	local item = r.payoff[1] == "item" and r.payoff[2] or nil
-	local vars = { to = LeadsTo(r.payoff), step = r.step and ns.Int(r.step), of = r.of and ns.Int(r.of) }
+	local kind = r.payoff[1]
+	local item = kind == "item" and r.payoff[2] or nil
+	local vars = { to = LeadsTo(r.payoff, hex), step = r.step and ns.Int(r.step), of = r.of and ns.Int(r.of) }
 	if r.step and r.of then
-		return ns.Fill("Leads to {to} · step {step} of {of}", vars), item, ns.Fill("Leads to {to}\nStep {step} of {of}", vars)
+		return ns.Fill("Leads to {to} · step {step} of {of}", vars), item, ns.Fill("Leads to {to}\nStep {step} of {of}", vars), kind
 	end
-	if r.step then return ns.Fill("Leads to {to} · step {step}", vars), item, ns.Fill("Leads to {to}\nStep {step}", vars) end
-	return ns.Fill("Leads to {to}", vars), item
+	if r.step then return ns.Fill("Leads to {to} · step {step}", vars), item, ns.Fill("Leads to {to}\nStep {step}", vars), kind end
+	return ns.Fill("Leads to {to}", vars), item, nil, kind
 end
 
 -- The facts NeverQuestAlone gets for a quest, each only when known: step, of, to (the payoff's name),

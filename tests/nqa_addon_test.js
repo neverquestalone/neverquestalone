@@ -2548,6 +2548,7 @@ test('navigator: the stop, what to do there and the quest counts; quest stops mo
   assert.equal(vm.num('NQAMapDB.nav.index'), 3);
   tick();
   assert.equal(vm.evaluate('NQANavigator.quests.text'), '|cff808080Rite of Vision · pick it up here|r');
+  assert.deepEqual(vm.json('{ NS.MapShared.navView.quests[1].state, NS.MapShared.navView.quests[1].pickup }'), ['missing', true], 'one to pick up here: the HUD says where its chain leads (UC-02)');
   // Picked up: the route is finished.
   vm.run('table.insert(STUB.log, { id = 770, title = "Rite of Vision", complete = false, objectives = {} }); STUB.FireEvent("QUEST_ACCEPTED", 770)'); tick();
   assert.equal(vm.evaluate('NQAMapDB.nav'), null);

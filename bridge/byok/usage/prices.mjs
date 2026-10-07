@@ -214,8 +214,12 @@ function findModel(models, model) {
 }
 
 const zeroPrice = (provider, model, extra) => effectivePrice({ provider, model, input: 0, output: 0, ...extra });
+// Other speaks Chat Completions, whose completion_tokens already hold the reasoning (OpenAI's usage shape:
+// completion_tokens_details.reasoning_tokens is a part of it, as DeepSeek, OpenRouter and LM Studio report
+// it), so its reasoning never counts on top. A flag that lowers a cost, set here in code, never by a table.
+const REASONING_IN_OUTPUT = new Set(['custom']);
 /** A model on a server on this computer (Other at localhost): $0, marked local, whatever its provider id. */
-export const localPrice = (provider, model) => zeroPrice(provider, model ?? null, { local: true });
+export const localPrice = (provider, model) => zeroPrice(provider, model ?? null, { local: true, reasoningInOutput: REASONING_IN_OUTPUT.has(provider) });
 
 /** The higher of two resolved prices, field by field; null-safe. */
 export function higherOf(a, b) {
@@ -274,7 +278,7 @@ export function createPriceBook({ bundled = loadPriceTable(), refreshed = null }
     return {
       local: LOCAL.has(provider),
       exact: b.exact === true,
-      reasoningInOutput: b.reasoningInOutput === true,
+      reasoningInOutput: b.reasoningInOutput === true || REASONING_IN_OUTPUT.has(provider),
       blockedRequestFee: Math.max(isPrice(b.blockedRequestFee) ? b.blockedRequestFee : 0, isPrice(f.blockedRequestFee) ? f.blockedRequestFee : 0),
     };
   }
